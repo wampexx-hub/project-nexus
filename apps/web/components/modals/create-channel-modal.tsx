@@ -34,7 +34,6 @@ import { api } from "@/lib/api";
 enum ChannelType {
     TEXT = "TEXT",
     AUDIO = "AUDIO",
-    VIDEO = "VIDEO"
 }
 
 const formSchema = z.object({
@@ -123,7 +122,7 @@ export const CreateChannelModal = () => {
                                                         value={type}
                                                         className="capitalize hover:bg-zinc-700/50"
                                                     >
-                                                        {type === "TEXT" ? "Metin" : type === "AUDIO" ? "Ses" : "Video"}
+                                                        {type === "TEXT" ? "Metin" : "Ses"}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>

@@ -84,32 +84,19 @@ export default function ChannelIdPage() {
         )
     }
 
-    // Render MediaRoom for AUDIO and VIDEO channels
-    if (channel.type === "AUDIO" || channel.type === "VIDEO") {
-        return (
-            <div className="bg-white dark:bg-[#313338] flex flex-col h-full">
-                <MediaRoom
-                    channelId={channel.id}
-                    channelName={channel.name}
-                    channelType={channel.type}
-                    serverId={unwrappedParams?.serverId || ""}
-                    username={user?.username || "User"}
-                    userImageUrl={user?.imageUrl}
-                    userId={user?.id || "unknown"}
-                />
-            </div>
-        );
-    }
+    // Determine if this is a voice-enabled channel (AUDIO or VIDEO types auto-join voice)
+    const isVoiceChannel = channel.type === "AUDIO" || channel.type === "VIDEO";
 
-    // Render chat interface for TEXT channels with integrated voice/video
+    // All channels now have both chat and voice/video capability
     return (
         <div className="bg-[#313338] flex flex-col h-[calc(100vh-48px)] md:h-[calc(100vh-0px)] shadow-inner">
             <ChatHeader
                 name={channel.name}
                 serverId={unwrappedParams?.serverId || ""}
                 type="channel"
+                channelType={channel.type}
             />
-            {/* Integrated Voice/Video Call Panel */}
+            {/* Integrated Voice/Video Call Panel - shown for all channels */}
             <ChannelCallPanel
                 channelId={channel.id}
                 channelName={channel.name}
@@ -117,6 +104,7 @@ export default function ChannelIdPage() {
                 username={user?.username || "User"}
                 userImageUrl={user?.imageUrl}
                 userId={user?.id || "unknown"}
+                autoJoin={isVoiceChannel}
             />
             <ChatMessages
                 member={member}
