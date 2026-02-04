@@ -5,27 +5,18 @@ import { NavigationAction } from "./navigation-action";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { NavigationItem } from "./navigation-item";
+import { api } from "@/lib/api";
 
 const NavigationSidebar = () => {
     const [servers, setServers] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchServers = async () => {
-            const token = localStorage.getItem("accessToken");
-            if (!token) return;
-
             try {
-                const res = await fetch("http://localhost:3001/api/servers", {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    setServers(data);
-                }
+                const res = await api.get("/servers");
+                setServers(res.data);
             } catch (e) {
-                console.error(e);
+                console.error("Failed to fetch servers", e);
             }
         }
 
@@ -51,7 +42,6 @@ const NavigationSidebar = () => {
                     </div>
                 ))}
             </ScrollArea>
-            {/* User Button etc. */}
         </div>
     )
 }

@@ -1,17 +1,9 @@
 "use client";
 
-import axios from "axios";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useParams, useRouter } from "next/navigation";
-
-enum ChannelType {
-    TEXT = "TEXT",
-    AUDIO = "AUDIO",
-    VIDEO = "VIDEO"
-}
-
 import {
     Dialog,
     DialogContent,
@@ -37,14 +29,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useModal } from "@/hooks/use-modal-store";
+import { api } from "@/lib/api";
+
+enum ChannelType {
+    TEXT = "TEXT",
+    AUDIO = "AUDIO",
+    VIDEO = "VIDEO"
+}
 
 const formSchema = z.object({
     name: z.string().min(1, {
-        message: "Channel name is required."
+        message: "Kanal adı gereklidir."
     }).refine(
         name => name !== "general",
         {
-            message: "Channel name cannot be 'general'"
+            message: "Kanal adı 'general' olamaz"
         }
     ),
     type: z.nativeEnum(ChannelType)
@@ -69,17 +68,15 @@ export const CreateChannelModal = () => {
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
-            const token = localStorage.getItem("accessToken");
-            await axios.post("http://localhost:3001/api/channels", {
+            await api.post("/channels", {
                 ...values,
                 serverId: params?.serverId
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
 
             form.reset();
             router.refresh();
             onClose();
+            window.location.reload();
         } catch (error) {
             console.log(error);
         }
@@ -92,10 +89,10 @@ export const CreateChannelModal = () => {
 
     return (
         <Dialog open={isModalOpen} onOpenChange={handleClose}>
-            <DialogContent className="bg-white text-black p-0 overflow-hidden">
+            <DialogContent className="bg-[#313338] text-[#dbdee1] border-none p-0 overflow-hidden shadow-2xl">
                 <DialogHeader className="pt-8 px-6">
-                    <DialogTitle className="text-2xl text-center font-bold">
-                        Create Channel
+                    <DialogTitle className="text-2xl text-center font-bold text-white">
+                        Kanal Oluştur
                     </DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
@@ -103,32 +100,10 @@ export const CreateChannelModal = () => {
                         <div className="space-y-8 px-6">
                             <FormField
                                 control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel
-                                            className="uppercase text-xs font-bold text-zinc-500 dark:text-secondary/70"
-                                        >
-                                            Channel name
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                disabled={isLoading}
-                                                className="bg-zinc-300/50 border-0 focus-visible:ring-0 text-black focus-visible:ring-offset-0"
-                                                placeholder="Enter channel name"
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
                                 name="type"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="uppercase text-xs font-bold text-zinc-500 dark:text-secondary/70">Channel Type</FormLabel>
+                                        <FormLabel className="uppercase text-xs font-bold text-[#b5bac1]">Kanal Türü</FormLabel>
                                         <Select
                                             disabled={isLoading}
                                             onValueChange={field.onChange}
@@ -136,19 +111,19 @@ export const CreateChannelModal = () => {
                                         >
                                             <FormControl>
                                                 <SelectTrigger
-                                                    className="bg-zinc-300/50 border-0 focus:ring-0 text-black ring-offset-0 focus:ring-offset-0 capitalize outline-none"
+                                                    className="bg-[#1e1f22] border-none text-white focus:ring-0 ring-offset-0 focus:ring-offset-0 capitalize outline-none"
                                                 >
-                                                    <SelectValue placeholder="Select a channel type" />
+                                                    <SelectValue placeholder="Kanal türü seçin" />
                                                 </SelectTrigger>
                                             </FormControl>
-                                            <SelectContent>
+                                            <SelectContent className="bg-[#1e1f22] border-none text-[#b5bac1]">
                                                 {Object.values(ChannelType).map((type) => (
                                                     <SelectItem
                                                         key={type}
                                                         value={type}
-                                                        className="capitalize"
+                                                        className="capitalize hover:bg-zinc-700/50"
                                                     >
-                                                        {type.toLowerCase()}
+                                                        {type === "TEXT" ? "Metin" : type === "AUDIO" ? "Ses" : "Video"}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -157,10 +132,32 @@ export const CreateChannelModal = () => {
                                     </FormItem>
                                 )}
                             />
+                            <FormField
+                                control={form.control}
+                                name="name"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel
+                                            className="uppercase text-xs font-bold text-[#b5bac1]"
+                                        >
+                                            Kanal Adı
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                disabled={isLoading}
+                                                className="bg-[#1e1f22] border-none text-white focus-visible:ring-0 focus-visible:ring-offset-0"
+                                                placeholder="Metin kanalı"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                         </div>
-                        <DialogFooter className="bg-gray-100 px-6 py-4">
-                            <Button disabled={isLoading} variant="default">
-                                Create
+                        <DialogFooter className="bg-[#2b2d31] px-6 py-4">
+                            <Button disabled={isLoading} className="bg-[#5865f2] hover:bg-[#4752c4] text-white">
+                                Oluştur
                             </Button>
                         </DialogFooter>
                     </form>

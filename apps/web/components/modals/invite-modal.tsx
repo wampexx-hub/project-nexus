@@ -1,9 +1,7 @@
 "use client";
 
-import axios from "axios";
 import { useState } from "react";
 import { Check, Copy, RefreshCw } from "lucide-react";
-
 import {
     Dialog,
     DialogContent,
@@ -15,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useModal } from "@/hooks/use-modal-store";
 import { useOrigin } from "@/hooks/use-origin";
+import { api } from "@/lib/api";
 
 export const InviteModal = () => {
     const { onOpen, isOpen, onClose, type, data } = useModal();
@@ -40,11 +39,7 @@ export const InviteModal = () => {
     const onNew = async () => {
         try {
             setIsLoading(true);
-            const token = localStorage.getItem("accessToken");
-            const response = await axios.patch(`http://localhost:3001/api/servers/${server?.id}/invite-code`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
+            const response = await api.patch(`/servers/${server?.id}/invite-code`);
             onOpen("invite", { server: response.data });
         } catch (error) {
             console.log(error);
@@ -55,25 +50,26 @@ export const InviteModal = () => {
 
     return (
         <Dialog open={isModalOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-white text-black p-0 overflow-hidden">
+            <DialogContent className="bg-[#313338] text-[#dbdee1] border-none p-0 overflow-hidden shadow-2xl">
                 <DialogHeader className="pt-8 px-6">
-                    <DialogTitle className="text-2xl text-center font-bold">
-                        Invite Friends
+                    <DialogTitle className="text-2xl text-center font-bold text-white">
+                        Arkadaşlarını Davet Et
                     </DialogTitle>
                 </DialogHeader>
                 <div className="p-6">
                     <Label
-                        className="uppercase text-xs font-bold text-zinc-500 dark:text-secondary/70"
+                        className="uppercase text-xs font-bold text-[#b5bac1]"
                     >
-                        Server invite link
+                        Sunucu Davet Bağlantısı
                     </Label>
                     <div className="flex items-center mt-2 gap-x-2">
                         <Input
                             disabled={isLoading}
-                            className="bg-zinc-300/50 border-0 focus-visible:ring-0 text-black focus-visible:ring-offset-0"
+                            className="bg-[#1e1f22] border-none text-white focus-visible:ring-0 focus-visible:ring-offset-0"
                             value={inviteUrl}
+                            readOnly
                         />
-                        <Button disabled={isLoading} onClick={onCopy} size="icon">
+                        <Button disabled={isLoading} onClick={onCopy} size="icon" className="bg-[#5865f2] hover:bg-[#4752c4]">
                             {copied
                                 ? <Check className="w-4 h-4" />
                                 : <Copy className="w-4 h-4" />
@@ -85,10 +81,10 @@ export const InviteModal = () => {
                         disabled={isLoading}
                         variant="link"
                         size="sm"
-                        className="text-xs text-zinc-500 mt-4"
+                        className="text-xs text-[#00a8fc] mt-4 p-0 h-auto hover:underline"
                     >
-                        Generate a new link
-                        <RefreshCw className="w-4 h-4 ml-2" />
+                        Yeni bir bağlantı oluştur
+                        <RefreshCw className={`w-4 h-4 ml-2 ${isLoading ? "animate-spin" : ""}`} />
                     </Button>
                 </div>
             </DialogContent>

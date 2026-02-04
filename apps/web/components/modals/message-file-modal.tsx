@@ -1,11 +1,9 @@
 "use client";
 
-import axios from "axios";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-
 import {
     Dialog,
     DialogContent,
@@ -27,7 +25,7 @@ import { useSocket } from "@/components/providers/socket-provider";
 
 const formSchema = z.object({
     fileUrl: z.string().min(1, {
-        message: "Attachment is required."
+        message: "Ek dosya gereklidir."
     })
 });
 
@@ -37,7 +35,7 @@ export const MessageFileModal = () => {
     const { socket } = useSocket();
 
     const isModalOpen = isOpen && type === "messageFile";
-    const { apiUrl, query } = data;
+    const { query } = data;
 
     const form = useForm({
         resolver: zodResolver(formSchema),
@@ -57,7 +55,6 @@ export const MessageFileModal = () => {
         try {
             if (!socket) return;
 
-            // Send file message via socket
             socket.emit("send-message", {
                 content: values.fileUrl,
                 fileUrl: values.fileUrl,
@@ -75,13 +72,13 @@ export const MessageFileModal = () => {
 
     return (
         <Dialog open={isModalOpen} onOpenChange={handleClose}>
-            <DialogContent className="bg-white text-black p-0 overflow-hidden">
+            <DialogContent className="bg-[#313338] text-[#dbdee1] border-none p-0 overflow-hidden shadow-2xl">
                 <DialogHeader className="pt-8 px-6">
-                    <DialogTitle className="text-2xl text-center font-bold">
-                        Add an attachment
+                    <DialogTitle className="text-2xl text-center font-bold text-white">
+                        Dosya Eki Ekle
                     </DialogTitle>
-                    <DialogDescription className="text-center text-zinc-500">
-                        Send a file as a message
+                    <DialogDescription className="text-center text-[#b5bac1]">
+                        Mesaj olarak bir dosya gönderin
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -105,9 +102,9 @@ export const MessageFileModal = () => {
                                 />
                             </div>
                         </div>
-                        <DialogFooter className="bg-gray-100 px-6 py-4">
-                            <Button disabled={isLoading} variant="default">
-                                Send
+                        <DialogFooter className="bg-[#2b2d31] px-6 py-4">
+                            <Button disabled={isLoading} className="bg-[#5865f2] hover:bg-[#4752c4] text-white w-full">
+                                Gönder
                             </Button>
                         </DialogFooter>
                     </form>

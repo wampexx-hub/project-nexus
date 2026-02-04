@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios";
 import {
     Check,
     Gavel,
@@ -12,8 +11,6 @@ import {
     ShieldCheck,
     ShieldQuestion
 } from "lucide-react";
-
-type MemberRole = "ADMIN" | "MODERATOR" | "GUEST";
 
 import {
     Dialog,
@@ -36,6 +33,9 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useModal } from "@/hooks/use-modal-store";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
+
+type MemberRole = "ADMIN" | "MODERATOR" | "GUEST";
 
 const roleIconMap = {
     "GUEST": null,
@@ -54,13 +54,12 @@ export const MembersModal = () => {
     const onKick = async (memberId: string) => {
         try {
             setLoadingId(memberId);
-            const token = localStorage.getItem("accessToken");
-            await axios.delete(`http://localhost:3001/api/servers/${server?.id}/members/${memberId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`/servers/${server?.id}/members/${memberId}`);
 
             router.refresh();
-            onOpen("members", { server });
+            // Refresh local server data in modal
+            const res = await api.get(`/servers/${server?.id}`);
+            onOpen("members", { server: res.data });
         } catch (error) {
             console.log(error);
         } finally {
@@ -71,16 +70,11 @@ export const MembersModal = () => {
     const onRoleChange = async (memberId: string, role: MemberRole) => {
         try {
             setLoadingId(memberId);
-            const token = localStorage.getItem("accessToken");
-            await axios.patch(`http://localhost:3001/api/servers/${server?.id}/members/${memberId}`,
-                { role },
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
-            );
+            await api.patch(`/servers/${server?.id}/members/${memberId}`, { role });
 
             router.refresh();
-            onOpen("members", { server });
+            const res = await api.get(`/servers/${server?.id}`);
+            onOpen("members", { server: res.data });
         } catch (error) {
             console.log(error);
         } finally {
@@ -90,13 +84,13 @@ export const MembersModal = () => {
 
     return (
         <Dialog open={isModalOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-white text-black overflow-hidden">
+            <DialogContent className="bg-[#313338] text-[#dbdee1] border-none overflow-hidden shadow-2xl">
                 <DialogHeader className="pt-8 px-6">
-                    <DialogTitle className="text-2xl text-center font-bold">
-                        Manage Members
+                    <DialogTitle className="text-2xl text-center font-bold text-white">
+                        Üyeleri Yönet
                     </DialogTitle>
-                    <DialogDescription className="text-center text-zinc-500">
-                        {server?.members?.length} Members
+                    <DialogDescription className="text-center text-[#b5bac1]">
+                        {server?.members?.length} Üye
                     </DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="mt-8 max-h-[420px] pr-6">
@@ -104,39 +98,39 @@ export const MembersModal = () => {
                         <div key={member.id} className="flex items-center gap-x-2 mb-6">
                             <div className="flex-1">
                                 <div className="flex items-center gap-x-1">
-                                    <p className="font-semibold text-xs">
+                                    <p className="font-semibold text-sm text-white">
                                         {member.user.username}
                                     </p>
                                     {roleIconMap[member.role as keyof typeof roleIconMap]}
                                 </div>
-                                <p className="text-xs text-zinc-500">
+                                <p className="text-xs text-[#b5bac1]">
                                     {member.user.email}
                                 </p>
                             </div>
                             {server.ownerId !== member.userId && loadingId !== member.id && (
-                                <div>
+                                <div className="ml-auto">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger>
-                                            <MoreVertical className="h-4 w-4 text-zinc-500" />
+                                            <MoreVertical className="h-4 w-4 text-[#b5bac1]" />
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent side="left">
+                                        <DropdownMenuContent side="left" className="bg-[#111214] border-none text-[#b5bac1]">
                                             <DropdownMenuSub>
                                                 <DropdownMenuSubTrigger className="flex items-center">
                                                     <ShieldQuestion className="w-4 h-4 mr-2" />
-                                                    <span>Role</span>
+                                                    <span>Rol</span>
                                                 </DropdownMenuSubTrigger>
                                                 <DropdownMenuPortal>
-                                                    <DropdownMenuSubContent>
+                                                    <DropdownMenuSubContent className="bg-[#111214] border-none text-[#b5bac1]">
                                                         <DropdownMenuItem onClick={() => onRoleChange(member.id, "GUEST")}>
                                                             <Shield className="h-4 w-4 mr-2" />
-                                                            Guest
+                                                            Misafir (Guest)
                                                             {member.role === "GUEST" && (
                                                                 <Check className="h-4 w-4 ml-auto" />
                                                             )}
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => onRoleChange(member.id, "MODERATOR")}>
                                                             <ShieldCheck className="h-4 w-4 mr-2" />
-                                                            Moderator
+                                                            Moderatör
                                                             {member.role === "MODERATOR" && (
                                                                 <Check className="h-4 w-4 ml-auto" />
                                                             )}
@@ -144,17 +138,17 @@ export const MembersModal = () => {
                                                     </DropdownMenuSubContent>
                                                 </DropdownMenuPortal>
                                             </DropdownMenuSub>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem onClick={() => onKick(member.id)}>
+                                            <DropdownMenuSeparator className="bg-zinc-700" />
+                                            <DropdownMenuItem onClick={() => onKick(member.id)} className="text-rose-500 hover:bg-rose-500 hover:text-white">
                                                 <Gavel className="h-4 w-4 mr-2" />
-                                                Kick
+                                                Sunucudan At
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
                             )}
                             {loadingId === member.id && (
-                                <Loader2 className="animate-spin text-zinc-500 ml-auto w-4 h-4" />
+                                <Loader2 className="animate-spin text-[#b5bac1] ml-auto w-4 h-4" />
                             )}
                         </div>
                     ))}

@@ -1,5 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useSocket } from "@/components/providers/socket-provider";
+import { api } from "@/lib/api";
 
 interface ChatQueryProps {
     queryKey: string;
@@ -17,13 +18,9 @@ export const useChatQuery = ({
     const { isConnected } = useSocket();
 
     const fetchMessages = async ({ pageParam = undefined }) => {
-        const token = localStorage.getItem("accessToken");
         const url = `${apiUrl}?cursor=${pageParam || ""}&${paramKey}=${paramValue}`;
-
-        const res = await fetch(url, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        return res.json();
+        const res = await api.get(url);
+        return res.data;
     };
 
     const {

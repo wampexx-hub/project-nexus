@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { redirect, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Plus, Settings } from "lucide-react";
 import { useModal } from "@/hooks/use-modal-store";
 import {
@@ -11,7 +11,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, UserPlus, Trash } from "lucide-react";
+import { ChevronDown, UserPlus, Trash, Hash, Volume2 } from "lucide-react";
+import { api } from "@/lib/api";
 
 interface ServerSidebarProps {
     serverId: string;
@@ -26,28 +27,23 @@ export const ServerSidebar = ({
 
     useEffect(() => {
         const fetchServer = async () => {
-            const token = localStorage.getItem("accessToken");
-            if (!token) return;
-
             try {
-                const res = await fetch(`http://localhost:3001/api/servers/${serverId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    setServer(data);
-                } else {
-                    if (res.status === 404) redirect("/channels");
-                }
+                const res = await api.get(`/servers/${serverId}`);
+                setServer(res.data);
             } catch (e) {
                 console.error(e);
+                router.push("/channels");
             }
         }
         fetchServer();
-    }, [serverId]);
+    }, [serverId, router]);
 
     if (!server) {
-        return <div className="flex flex-col h-full text-primary w-full dark:bg-[#2B2D31] bg-[#F2F3F5] items-center justify-center">Loading...</div>
+        return (
+            <div className="flex flex-col h-full text-primary w-full dark:bg-[#2B2D31] bg-[#F2F3F5] items-center justify-center">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+            </div>
+        )
     }
 
     const textChannels = server.channels?.filter((channel: any) => channel.type === "TEXT") || [];
@@ -66,45 +62,45 @@ export const ServerSidebar = ({
                     </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                    className="w-56 text-xs font-medium text-black dark:text-neutral-400 space-y-[2px]"
+                    className="w-56 text-xs font-medium text-black dark:text-neutral-400 space-y-[2px] bg-white dark:bg-[#111214] border-none shadow-xl"
                 >
                     <DropdownMenuItem
                         onClick={() => onOpen("invite", { server })}
-                        className="text-indigo-600 dark:text-indigo-400 px-3 py-2 text-sm cursor-pointer"
+                        className="text-indigo-600 dark:text-indigo-400 px-3 py-2 text-sm cursor-pointer hover:bg-indigo-500 hover:text-white"
                     >
-                        Invite People
+                        Davet Et
                         <UserPlus className="h-4 w-4 ml-auto" />
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onClick={() => onOpen("members", { server })}
-                        className="px-3 py-2 text-sm cursor-pointer"
-                    >
-                        Manage Members
-                        <Settings className="h-4 w-4 ml-auto" />
                     </DropdownMenuItem>
                     <DropdownMenuItem
                         onClick={() => onOpen("editServer", { server })}
                         className="px-3 py-2 text-sm cursor-pointer"
                     >
-                        Server Settings
+                        Sunucu Ayarları
                         <Settings className="h-4 w-4 ml-auto" />
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
                     <DropdownMenuItem
-                        className="text-rose-500 px-3 py-2 text-sm cursor-pointer"
+                        onClick={() => onOpen("members", { server })}
+                        className="px-3 py-2 text-sm cursor-pointer"
                     >
-                        Delete Server
+                        Üyeleri Yönet
+                        <Settings className="h-4 w-4 ml-auto" />
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-700" />
+                    <DropdownMenuItem
+                        className="text-rose-500 px-3 py-2 text-sm cursor-pointer hover:bg-rose-500 hover:text-white"
+                    >
+                        Sunucuyu Sil
                         <Trash className="h-4 w-4 ml-auto" />
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
 
-            <div className="flex-1 px-3 py-2">
+            <div className="flex-1 px-3 py-2 overflow-y-auto custom-scrollbar">
                 {!!textChannels?.length && (
                     <div className="mb-2">
                         <div className="flex items-center justify-between py-2">
                             <p className="text-xs uppercase font-semibold text-zinc-500 dark:text-zinc-400">
-                                Text Channels
+                                Metin Kanalları
                             </p>
                             <button
                                 onClick={() => onOpen("createChannel")}
@@ -113,23 +109,27 @@ export const ServerSidebar = ({
                                 <Plus className="h-4 w-4" />
                             </button>
                         </div>
-                        {textChannels.map((channel: any) => (
-                            <div
-                                key={channel.id}
-                                onClick={() => router.push(`/channels/${serverId}/${channel.id}`)}
-                                className="p-2 hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 rounded-md cursor-pointer text-zinc-600 dark:text-zinc-400 dark:group-hover:text-zinc-300 flex items-center gap-x-2"
-                            >
-                                <span>#</span>
-                                <div>{channel.name}</div>
-                            </div>
-                        ))}
+                        <div className="space-y-[2px]">
+                            {textChannels.map((channel: any) => (
+                                <button
+                                    key={channel.id}
+                                    onClick={() => router.push(`/channels/${serverId}/${channel.id}`)}
+                                    className="group px-2 py-2 rounded-md flex items-center gap-x-2 w-full hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 transition mb-1"
+                                >
+                                    <Hash className="flex-shrink-0 w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+                                    <p className="line-clamp-1 font-semibold text-sm text-zinc-500 group-hover:text-zinc-600 dark:text-zinc-400 dark:group-hover:text-zinc-300 transition">
+                                        {channel.name}
+                                    </p>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 )}
                 {!!audioChannels?.length && (
                     <div className="mb-2">
                         <div className="flex items-center justify-between py-2">
                             <p className="text-xs uppercase font-semibold text-zinc-500 dark:text-zinc-400">
-                                Voice Channels
+                                Ses Kanalları
                             </p>
                             <button
                                 onClick={() => onOpen("createChannel")}
@@ -138,14 +138,19 @@ export const ServerSidebar = ({
                                 <Plus className="h-4 w-4" />
                             </button>
                         </div>
-                        {audioChannels.map((channel: any) => (
-                            <div
-                                key={channel.id}
-                                className="p-2 hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 rounded-md cursor-pointer text-zinc-600 dark:text-zinc-400"
-                            >
-                                🔊 {channel.name}
-                            </div>
-                        ))}
+                        <div className="space-y-[2px]">
+                            {audioChannels.map((channel: any) => (
+                                <button
+                                    key={channel.id}
+                                    className="group px-2 py-2 rounded-md flex items-center gap-x-2 w-full hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 transition mb-1"
+                                >
+                                    <Volume2 className="flex-shrink-0 w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+                                    <p className="line-clamp-1 font-semibold text-sm text-zinc-500 group-hover:text-zinc-600 dark:text-zinc-400 dark:group-hover:text-zinc-300 transition">
+                                        {channel.name}
+                                    </p>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>

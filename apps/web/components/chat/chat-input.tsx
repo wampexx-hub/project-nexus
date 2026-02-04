@@ -88,33 +88,35 @@ export const ChatInput = ({
                                     <button
                                         type="button"
                                         onClick={() => onOpen("messageFile", { apiUrl, query })}
-                                        className="absolute top-7 left-8 h-[24px] w-[24px] bg-zinc-500 dark:bg-zinc-400 hover:bg-zinc-600 dark:hover:bg-zinc-300 transition rounded-full p-1 flex items-center justify-center"
+                                        className="absolute top-7 left-8 h-[24px] w-[24px] bg-[#b5bac1] hover:bg-white transition rounded-full p-1 flex items-center justify-center group"
                                     >
-                                        <Plus className="text-white dark:text-[#313338]" />
+                                        <Plus className="text-[#313338]" />
                                     </button>
                                     <Input
                                         disabled={isLoading}
-                                        className="px-14 py-6 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-600 dark:text-zinc-200"
-                                        placeholder={`Message ${type === "conversation" ? name : "#" + name}`}
+                                        autoComplete="off"
+                                        className="px-14 py-6 bg-[#383a40] border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-[#dbdee1]"
+                                        placeholder={`Mesaj gönder: ${type === "conversation" ? name : "#" + name}`}
                                         {...field}
                                     />
-                                    <div className="absolute top-7 right-8">
+                                    <div className="absolute top-7 right-8 flex items-center gap-x-2">
                                         <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
                                             <PopoverTrigger asChild>
                                                 <button
                                                     type="button"
-                                                    className="hover:text-zinc-600 dark:hover:text-zinc-300 transition"
+                                                    className="hover:text-white transition"
                                                 >
-                                                    <Smile className="h-6 w-6 text-zinc-500 dark:text-zinc-400" />
+                                                    <Smile className="h-6 w-6 text-[#b5bac1] hover:text-[#dbdee1]" />
                                                 </button>
                                             </PopoverTrigger>
                                             <PopoverContent
-                                                side="right"
+                                                side="top"
                                                 sideOffset={40}
-                                                className="bg-transparent border-none shadow-none drop-shadow-none mb-16"
+                                                className="bg-transparent border-none shadow-none drop-shadow-none mb-4"
                                             >
                                                 <EmojiPicker
                                                     onEmojiClick={onEmojiClick}
+                                                    theme={"dark" as any}
                                                 />
                                             </PopoverContent>
                                         </Popover>

@@ -34,7 +34,8 @@ export const SocketProvider = ({
         const token = localStorage.getItem("accessToken");
 
         // Connect to the specific namespace
-        const socketInstance = new (ClientIO as any)("http://localhost:3001/api/socket/messages", {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://192.168.1.86:3001";
+        const socketInstance = new (ClientIO as any)(`${apiUrl}/api/socket/messages`, {
             path: "/socket.io",
             addTrailingSlash: false,
             auth: {

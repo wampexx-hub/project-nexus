@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import { api } from "@/lib/api";
 import {
     Users,
     Server,
@@ -37,28 +37,12 @@ export default function AdminDashboard() {
     const [servers, setServers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchData();
-    }, []);
-
     const fetchData = async () => {
         try {
-            const token = localStorage.getItem("accessToken");
-            if (!token) {
-                router.push("/login");
-                return;
-            }
-
             const [statsRes, usersRes, serversRes] = await Promise.all([
-                axios.get("http://localhost:3001/api/admin/statistics", {
-                    headers: { Authorization: `Bearer ${token}` }
-                }),
-                axios.get("http://localhost:3001/api/admin/users?limit=10", {
-                    headers: { Authorization: `Bearer ${token}` }
-                }),
-                axios.get("http://localhost:3001/api/admin/servers?limit=10", {
-                    headers: { Authorization: `Bearer ${token}` }
-                })
+                api.get("/admin/statistics"),
+                api.get("/admin/users?limit=10"),
+                api.get("/admin/servers?limit=10")
             ]);
 
             setStats(statsRes.data);
@@ -75,13 +59,14 @@ export default function AdminDashboard() {
         }
     };
 
+    useEffect(() => {
+        fetchData();
+    }, []);
+
     const handleBanUser = async (userId: string, isBanned: boolean) => {
         try {
-            const token = localStorage.getItem("accessToken");
             const endpoint = isBanned ? "unban" : "ban";
-            await axios.post(`http://localhost:3001/api/admin/users/${userId}/${endpoint}`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post(`/admin/users/${userId}/${endpoint}`, {});
             fetchData();
         } catch (error) {
             console.error(error);
@@ -90,11 +75,8 @@ export default function AdminDashboard() {
 
     const handleMakeAdmin = async (userId: string, isAdmin: boolean) => {
         try {
-            const token = localStorage.getItem("accessToken");
             const endpoint = isAdmin ? "remove-admin" : "make-admin";
-            await axios.post(`http://localhost:3001/api/admin/users/${userId}/${endpoint}`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post(`/admin/users/${userId}/${endpoint}`, {});
             fetchData();
         } catch (error) {
             console.error(error);
@@ -105,10 +87,7 @@ export default function AdminDashboard() {
         if (!confirm("Are you sure you want to delete this server?")) return;
 
         try {
-            const token = localStorage.getItem("accessToken");
-            await axios.delete(`http://localhost:3001/api/admin/servers/${serverId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`/admin/servers/${serverId}`);
             fetchData();
         } catch (error) {
             console.error(error);
@@ -117,24 +96,26 @@ export default function AdminDashboard() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-screen">
-                <p className="text-zinc-500">Loading admin dashboard...</p>
+            <div className="flex items-center justify-center h-screen bg-[#313338]">
+                <div className="flex flex-col items-center gap-y-4">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent" />
+                    <p className="text-zinc-400">Admin paneli yükleniyor...</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col h-screen bg-[#F2F3F5] dark:bg-[#313338]">
+        <div className="flex flex-col h-screen bg-[#F2F3F5] dark:bg-[#313338] overflow-y-auto">
             <div className="p-6">
-                <h1 className="text-3xl font-bold mb-2 text-black dark:text-white">Admin Dashboard</h1>
-                <p className="text-zinc-500 dark:text-zinc-400">Manage users, servers, and view statistics</p>
+                <h1 className="text-3xl font-bold mb-2 text-black dark:text-white">Admin Paneli</h1>
+                <p className="text-zinc-500 dark:text-zinc-400">Kullanıcıları, sunucuları yönetin ve istatistikleri görüntüleyin</p>
             </div>
 
-            {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-6 mb-6">
-                <Card>
+                <Card className="bg-white dark:bg-[#2B2D31] border-none">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                        <CardTitle className="text-sm font-medium">Toplam Kullanıcı</CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -142,9 +123,9 @@ export default function AdminDashboard() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="bg-white dark:bg-[#2B2D31] border-none">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Servers</CardTitle>
+                        <CardTitle className="text-sm font-medium">Toplam Sunucu</CardTitle>
                         <Server className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -152,9 +133,9 @@ export default function AdminDashboard() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="bg-white dark:bg-[#2B2D31] border-none">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Channels</CardTitle>
+                        <CardTitle className="text-sm font-medium">Toplam Kanal</CardTitle>
                         <Hash className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -162,9 +143,9 @@ export default function AdminDashboard() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="bg-white dark:bg-[#2B2D31] border-none">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Messages</CardTitle>
+                        <CardTitle className="text-sm font-medium">Toplam Mesaj</CardTitle>
                         <MessageSquare className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -173,22 +154,21 @@ export default function AdminDashboard() {
                 </Card>
             </div>
 
-            {/* Users Table */}
             <div className="px-6 mb-6">
-                <Card>
+                <Card className="bg-white dark:bg-[#2B2D31] border-none">
                     <CardHeader>
-                        <CardTitle>Recent Users</CardTitle>
-                        <CardDescription>Manage user accounts and permissions</CardDescription>
+                        <CardTitle>Son Kullanıcılar</CardTitle>
+                        <CardDescription>Kullanıcı hesaplarını ve yetkilerini yönetin</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Username</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Servers</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Actions</TableHead>
+                                    <TableHead>Kullanıcı Adı</TableHead>
+                                    <TableHead>E-posta</TableHead>
+                                    <TableHead>Sunucular</TableHead>
+                                    <TableHead>Durum</TableHead>
+                                    <TableHead>İşlemler</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -199,15 +179,15 @@ export default function AdminDashboard() {
                                         <TableCell>{user._count.members}</TableCell>
                                         <TableCell>
                                             {user.isAdmin && (
-                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">
                                                     <Shield className="h-3 w-3 mr-1" />
                                                     Admin
                                                 </span>
                                             )}
                                             {user.isBanned && (
-                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 ml-2">
+                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 ml-2 dark:bg-red-900/30 dark:text-red-400">
                                                     <Ban className="h-3 w-3 mr-1" />
-                                                    Banned
+                                                    Yasaklı
                                                 </span>
                                             )}
                                         </TableCell>
@@ -237,21 +217,20 @@ export default function AdminDashboard() {
                 </Card>
             </div>
 
-            {/* Servers Table */}
             <div className="px-6 mb-6">
-                <Card>
+                <Card className="bg-white dark:bg-[#2B2D31] border-none">
                     <CardHeader>
-                        <CardTitle>Recent Servers</CardTitle>
-                        <CardDescription>Manage servers across the platform</CardDescription>
+                        <CardTitle>Son Sunucular</CardTitle>
+                        <CardDescription>Platformdaki sunucuları yönetin</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>Members</TableHead>
-                                    <TableHead>Channels</TableHead>
-                                    <TableHead>Actions</TableHead>
+                                    <TableHead>Ad</TableHead>
+                                    <TableHead>Üyeler</TableHead>
+                                    <TableHead>Kanallar</TableHead>
+                                    <TableHead>İşlemler</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

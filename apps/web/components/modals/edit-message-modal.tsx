@@ -1,11 +1,10 @@
 "use client";
 
-import axios from "axios";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-
+import { useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -23,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useModal } from "@/hooks/use-modal-store";
+import { api } from "@/lib/api";
 
 const formSchema = z.object({
     content: z.string().min(1),
@@ -33,7 +33,7 @@ export const EditMessageModal = () => {
     const router = useRouter();
 
     const isModalOpen = isOpen && type === "editMessage";
-    const { apiUrl, query, message } = data;
+    const { apiUrl, message } = data;
 
     const form = useForm({
         resolver: zodResolver(formSchema),
@@ -41,6 +41,12 @@ export const EditMessageModal = () => {
             content: message?.content || "",
         }
     });
+
+    useEffect(() => {
+        if (message) {
+            form.setValue("content", message.content);
+        }
+    }, [message, form]);
 
     const handleClose = () => {
         form.reset();
@@ -51,10 +57,7 @@ export const EditMessageModal = () => {
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
-            const token = localStorage.getItem("accessToken");
-            await axios.patch(`${apiUrl}/${message?.id}`, values, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.patch(`${apiUrl}/${message?.id}`, values);
 
             form.reset();
             router.refresh();
@@ -66,14 +69,11 @@ export const EditMessageModal = () => {
 
     return (
         <Dialog open={isModalOpen} onOpenChange={handleClose}>
-            <DialogContent className="bg-white text-black p-0 overflow-hidden">
+            <DialogContent className="bg-[#313338] text-[#dbdee1] border-none p-0 overflow-hidden shadow-2xl">
                 <DialogHeader className="pt-8 px-6">
-                    <DialogTitle className="text-2xl text-center font-bold">
-                        Edit Message
+                    <DialogTitle className="text-2xl text-center font-bold text-white">
+                        Mesajı Düzenle
                     </DialogTitle>
-                    <DialogDescription className="text-center text-zinc-500">
-                        Make changes to your message
-                    </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -86,8 +86,8 @@ export const EditMessageModal = () => {
                                         <FormControl>
                                             <Input
                                                 disabled={isLoading}
-                                                className="bg-zinc-300/50 border-0 focus-visible:ring-0 text-black focus-visible:ring-offset-0"
-                                                placeholder="Edit your message"
+                                                className="bg-[#1e1f22] border-none text-white focus-visible:ring-0 focus-visible:ring-offset-0"
+                                                placeholder="Mesajınızı düzenleyin"
                                                 {...field}
                                             />
                                         </FormControl>
@@ -95,9 +95,9 @@ export const EditMessageModal = () => {
                                 )}
                             />
                         </div>
-                        <DialogFooter className="bg-gray-100 px-6 py-4">
-                            <Button disabled={isLoading} variant="default">
-                                Save
+                        <DialogFooter className="bg-[#2b2d31] px-6 py-4">
+                            <Button disabled={isLoading} className="bg-[#5865f2] hover:bg-[#4752c4] text-white">
+                                Kaydet
                             </Button>
                         </DialogFooter>
                     </form>

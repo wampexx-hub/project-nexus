@@ -63,7 +63,7 @@ export const ChatMessages = ({
         status,
     } = useChatQuery({
         queryKey,
-        apiUrl,
+        apiUrl: apiUrl, // Already partial path usually
         paramKey,
         paramValue,
     });
@@ -83,8 +83,8 @@ export const ChatMessages = ({
     if (status === "pending") {
         return (
             <div className="flex flex-col flex-1 justify-center items-center">
-                <Loader2 className="h-7 w-7 text-zinc-500 animate-spin my-4" />
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Loading messages...</p>
+                <Loader2 className="h-7 w-7 text-[#b5bac1] animate-spin my-4" />
+                <p className="text-xs text-[#b5bac1]">Mesajlar yükleniyor...</p>
             </div>
         )
     }
@@ -92,13 +92,13 @@ export const ChatMessages = ({
     if (status === "error") {
         return (
             <div className="flex flex-col flex-1 justify-center items-center">
-                <ServerCrash className="h-7 w-7 text-zinc-500 my-4" />
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Something went wrong!</p>
+                <ServerCrash className="h-7 w-7 text-[#b5bac1] my-4" />
+                <p className="text-xs text-[#b5bac1]">Bir şeyler ters gitti!</p>
             </div>
         )
     }
 
-    const isOwner = (message: MessageWithMember) => message.member.userId === member?.userId;
+    const isOwner = (message: MessageWithMember) => message.member?.userId === member?.userId;
     const isAdmin = member?.role === "ADMIN";
     const isModerator = member?.role === "MODERATOR";
     const canModify = (message: MessageWithMember) => !message.deleted && (isOwner(message) || isAdmin || isModerator);
@@ -107,22 +107,28 @@ export const ChatMessages = ({
         <div className="flex-1 flex flex-col py-4 overflow-y-auto" ref={chatRef}>
             {!hasNextPage && <div className="flex-1" />}
             {!hasNextPage && (
-                <div className="flex flex-col items-center justify-center mb-4">
-                    <p className="text-zinc-500 dark:text-zinc-400">
-                        Welcome to #{name}!
+                <div className="flex flex-col items-center justify-center mb-4 px-4 text-center">
+                    <div className="h-20 w-20 rounded-full bg-[#404249] flex items-center justify-center mb-4">
+                        <span className="text-4xl text-white">#</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white mb-2">
+                        #{name} kanalına hoş geldin!
+                    </p>
+                    <p className="text-[#b5bac1]">
+                        Bu, #{name} kanalının başlangıcıdır.
                     </p>
                 </div>
             )}
             {hasNextPage && (
                 <div className="flex justify-center">
                     {isFetchingNextPage ? (
-                        <Loader2 className="h-6 w-6 text-zinc-500 animate-spin my-4" />
+                        <Loader2 className="h-6 w-6 text-[#b5bac1] animate-spin my-4" />
                     ) : (
                         <button
                             onClick={() => fetchNextPage()}
-                            className="text-zinc-500 hover:text-zinc-600 dark:text-zinc-400 text-xs my-4 dark:hover:text-zinc-300 transition"
+                            className="text-[#b5bac1] hover:text-[#dbdee1] text-xs my-4 transition"
                         >
-                            Load previous messages
+                            Önceki mesajları yükle
                         </button>
                     )}
                 </div>
@@ -132,21 +138,21 @@ export const ChatMessages = ({
                 {data?.pages?.map((group, i) => (
                     <Fragment key={i}>
                         {group.items.map((message: MessageWithMember) => (
-                            <div key={message.id} className="group flex items-start gap-x-4 p-4 hover:bg-black/5 dark:hover:bg-zinc-700/10 transition w-full">
+                            <div key={message.id} className="group flex items-start gap-x-4 p-4 hover:bg-black/5 dark:hover:bg-[#2e3035]/50 transition w-full relative">
                                 <div className="flex flex-col w-full">
                                     <div className="flex items-center gap-x-2">
-                                        <p className="font-semibold text-sm hover:underline cursor-pointer">
-                                            {message.member?.user?.username || "Unknown"}
+                                        <p className="font-semibold text-sm hover:underline cursor-pointer text-white">
+                                            {message.member?.user?.username || "Bilinmeyen Kullanıcı"}
                                         </p>
-                                        <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                                        <span className="text-xs text-[#b5bac1]">
                                             {format(new Date(message.createdAt), "d MMM yyyy, HH:mm")}
                                         </span>
                                     </div>
-                                    <p className={`text-sm ${message.deleted ? "italic text-zinc-500 dark:text-zinc-400 text-xs mt-1" : "text-zinc-600 dark:text-zinc-300"}`}>
+                                    <p className={`text-sm ${message.deleted ? "italic text-[#b5bac1] text-xs mt-1" : "text-[#dbdee1]"}`}>
                                         {message.content}
                                         {message.updatedAt !== message.createdAt && !message.deleted && (
-                                            <span className="text-[10px] mx-2 text-zinc-500 dark:text-zinc-400">
-                                                (edited)
+                                            <span className="text-[10px] mx-2 text-[#b5bac1]">
+                                                (düzenlendi)
                                             </span>
                                         )}
                                     </p>
@@ -155,25 +161,25 @@ export const ChatMessages = ({
                                             href={message.fileUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="relative aspect-square rounded-md mt-2 overflow-hidden border flex items-center bg-secondary h-48 w-48"
+                                            className="relative aspect-square rounded-md mt-2 overflow-hidden border border-zinc-700 flex items-center bg-[#2b2d31] h-48 w-48"
                                         >
                                             <img
                                                 src={message.fileUrl}
-                                                alt="Message attachment"
+                                                alt="Dosya eki"
                                                 className="object-cover"
                                             />
                                         </a>
                                     )}
                                 </div>
                                 {canModify(message) && (
-                                    <div className="hidden group-hover:flex items-center gap-x-2 absolute p-1 -top-2 right-5 bg-white dark:bg-zinc-800 border rounded-sm">
+                                    <div className="hidden group-hover:flex items-center gap-x-2 absolute p-1 -top-2 right-5 bg-white dark:bg-[#1e1f22] border dark:border-zinc-800 rounded-sm shadow-xl">
                                         {isOwner(message) && (
                                             <button
                                                 onClick={() => onOpen("editMessage", {
                                                     apiUrl: `${apiUrl}`,
                                                     message
                                                 })}
-                                                className="cursor-pointer ml-auto hover:text-zinc-600 dark:hover:text-zinc-300 transition"
+                                                className="cursor-pointer ml-auto hover:text-white transition text-[#b5bac1]"
                                             >
                                                 <Edit className="h-4 w-4" />
                                             </button>
@@ -183,7 +189,7 @@ export const ChatMessages = ({
                                                 apiUrl: `${apiUrl}`,
                                                 message
                                             })}
-                                            className="cursor-pointer ml-auto hover:text-rose-600 transition"
+                                            className="cursor-pointer ml-auto hover:text-rose-500 transition text-[#b5bac1]"
                                         >
                                             <Trash className="h-4 w-4" />
                                         </button>

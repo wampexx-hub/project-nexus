@@ -16,10 +16,11 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { api } from "@/lib/api"
 
 const formSchema = z.object({
     email: z.string().email(),
-    password: z.string().min(1, "Password is required"),
+    password: z.string().min(1, "Şifre gereklidir"),
 })
 
 export default function LoginPage() {
@@ -34,76 +35,84 @@ export default function LoginPage() {
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         try {
-            const res = await fetch("http://localhost:3001/api/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(values),
-            })
+            const res = await api.post("/auth/login", values);
 
-            if (res.ok) {
-                const data = await res.json()
-
+            if (res.status === 201 || res.status === 200) {
+                const data = res.data;
                 console.log("Login success:", data)
-                // Store token (simple localStorage for MVP)
                 localStorage.setItem("accessToken", data.backendTokens.accessToken)
                 router.push("/channels")
-            } else {
-
-                console.error("Login failed")
+                window.location.reload(); // Force state refresh
             }
-        } catch (error) {
-
+        } catch (error: any) {
             console.error("Login error", error)
+            const errorMsg = error.response?.data?.message || error.message;
+            alert(`Giriş başarısız: ${errorMsg}`);
         }
     }
 
     return (
-        <Card className="w-[480px] border-none bg-[#313338] text-[#dbdee1] shadow-none sm:bg-[#313338] md:bg-[#313338]">
-            <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-semibold text-white">Welcome back!</CardTitle>
-                <CardDescription className="text-[#b5bac1]">We're so excited to see you again!</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-xs font-bold uppercase text-[#b5bac1]">Email</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Enter your email" className="bg-[#1e1f22] border-none text-white focus-visible:ring-0 focus-visible:ring-offset-0" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-xs font-bold uppercase text-[#b5bac1]">Password</FormLabel>
-                                    <FormControl>
-                                        <Input type="password" placeholder="Enter your password" className="bg-[#1e1f22] border-none text-white focus-visible:ring-0 focus-visible:ring-offset-0" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className="pt-2">
-                            <Button type="submit" className="w-full bg-[#5865f2] hover:bg-[#4752c4] text-white font-medium">Log In</Button>
-                        </div>
+        <div className="relative flex h-screen w-full items-center justify-center bg-[#0a0a0c] overflow-hidden">
+            {/* Background Blur */}
+            <div className="absolute top-1/4 left-1/4 h-64 w-64 rounded-full bg-purple-600/20 blur-[100px]" />
+            <div className="absolute bottom-1/4 right-1/4 h-64 w-64 rounded-full bg-blue-600/20 blur-[100px]" />
 
-                    </form>
-                </Form>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-2">
-                <div className="text-sm text-[#949ba4]">
-                    Need an account? <Link href="/register" className="text-[#00a8fc] hover:underline">Register</Link>
-                </div>
-            </CardFooter>
-        </Card>
+            <Card className="relative z-10 w-[420px] border border-white/10 bg-[#1e1f22]/80 backdrop-blur-xl shadow-2xl rounded-2xl overflow-hidden">
+                <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-purple-500 via-blue-500 to-emerald-500" />
+                <CardHeader className="text-center pt-10">
+                    <CardTitle className="text-3xl font-bold text-white">Tekrar Hoş Geldiniz!</CardTitle>
+                    <CardDescription className="text-[#b5bac1] mt-2">Sizi tekrar gördüğümüze çok sevindik!</CardDescription>
+                </CardHeader>
+                <CardContent className="px-8 pb-8">
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                            <FormField
+                                control={form.control}
+                                name="email"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs font-bold uppercase text-[#b5bac1]">E-POSTA</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                className="h-12 bg-[#101113] border-none text-white focus-visible:ring-1 focus-visible:ring-purple-500 rounded-xl transition-all"
+                                                placeholder="adınız@örnek.com"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="password"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs font-bold uppercase text-[#b5bac1]">ŞİFRE</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="password"
+                                                className="h-12 bg-[#101113] border-none text-white focus-visible:ring-1 focus-visible:ring-purple-500 rounded-xl transition-all"
+                                                placeholder="••••••••"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="pt-4">
+                                <Button type="submit" className="w-full h-12 bg-[#5865f2] hover:bg-[#4752c4] text-white font-bold text-base rounded-xl transition-all shadow-lg hover:shadow-purple-500/10">
+                                    Giriş Yap
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
+                    <div className="mt-6 text-sm text-[#949ba4]">
+                        Bir hesaba mı ihtiyacınız var? <Link href="/register" className="text-[#00a8fc] hover:underline font-medium">Kaydol</Link>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
     )
 }

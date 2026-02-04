@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios";
-
 import {
     Dialog,
     DialogContent,
@@ -13,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useModal } from "@/hooks/use-modal-store";
+import { api } from "@/lib/api";
 
 export const DeleteMessageModal = () => {
     const { isOpen, onClose, type, data } = useModal();
@@ -24,11 +23,8 @@ export const DeleteMessageModal = () => {
     const onClick = async () => {
         try {
             setIsLoading(true);
-            const token = localStorage.getItem("accessToken");
-            await axios.delete(`${apiUrl}/${message?.id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
+            // apiUrl from ChatMessages is usually "/messages"
+            await api.delete(`${apiUrl}/${message?.id}`);
             onClose();
         } catch (error) {
             console.log(error);
@@ -39,31 +35,32 @@ export const DeleteMessageModal = () => {
 
     return (
         <Dialog open={isModalOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-white text-black p-0 overflow-hidden">
+            <DialogContent className="bg-[#313338] text-[#dbdee1] border-none p-0 overflow-hidden shadow-2xl">
                 <DialogHeader className="pt-8 px-6">
-                    <DialogTitle className="text-2xl text-center font-bold">
-                        Delete Message
+                    <DialogTitle className="text-2xl text-center font-bold text-white">
+                        Mesajı Sil
                     </DialogTitle>
-                    <DialogDescription className="text-center text-zinc-500">
-                        Are you sure you want to do this? <br />
-                        The message will be permanently deleted.
+                    <DialogDescription className="text-center text-[#b5bac1]">
+                        Bu mesajı silmek istediğinizden emin misiniz? <br />
+                        Bu işlem geri alınamaz.
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter className="bg-gray-100 px-6 py-4">
+                <DialogFooter className="bg-[#2b2d31] px-6 py-4">
                     <div className="flex items-center justify-between w-full">
                         <Button
                             disabled={isLoading}
                             onClick={onClose}
                             variant="ghost"
+                            className="text-white hover:bg-zinc-700/50"
                         >
-                            Cancel
+                            İptal
                         </Button>
                         <Button
                             disabled={isLoading}
                             onClick={onClick}
-                            variant="destructive"
+                            className="bg-rose-500 hover:bg-rose-600 text-white"
                         >
-                            Confirm
+                            Onayla
                         </Button>
                     </div>
                 </DialogFooter>

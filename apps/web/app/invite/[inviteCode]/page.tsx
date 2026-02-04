@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import { api } from "@/lib/api";
 
 export default function InviteCodePage({
     params
@@ -14,19 +14,7 @@ export default function InviteCodePage({
     useEffect(() => {
         const joinServer = async () => {
             try {
-                const token = localStorage.getItem("accessToken");
-                if (!token) {
-                    router.push("/login");
-                    return;
-                }
-
-                const response = await axios.post(
-                    `http://localhost:3001/api/servers/join/${params.inviteCode}`,
-                    {},
-                    {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }
-                );
+                const response = await api.post(`/servers/join/${params.inviteCode}`, {});
 
                 if (response.data) {
                     router.push(`/channels/${response.data.id}`);
@@ -41,8 +29,11 @@ export default function InviteCodePage({
     }, [params.inviteCode, router]);
 
     return (
-        <div className="h-full flex items-center justify-center">
-            <p className="text-zinc-500">Joining server...</p>
+        <div className="h-full flex items-center justify-center bg-[#313338]">
+            <div className="flex flex-col items-center gap-y-4">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent" />
+                <p className="text-zinc-400">Sunucuya katılıyor...</p>
+            </div>
         </div>
     );
 }

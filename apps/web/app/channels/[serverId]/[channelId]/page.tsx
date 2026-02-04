@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { ChatHeader } from "@/components/chat/chat-header";
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessages } from "@/components/chat/chat-messages";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
+import { api } from "@/lib/api";
 
 interface ChannelIdPageProps {
     params: {
@@ -17,48 +18,51 @@ export default function ChannelIdPage({
     params
 }: ChannelIdPageProps) {
     const [channel, setChannel] = useState<any>(null);
-    const [member, setMember] = useState<any>(null); // Current user member info
+    const [member, setMember] = useState<any>(null);
+    const router = useRouter();
 
     useEffect(() => {
-        // Fetch channel details to confirm it exists and get name
-        const fetchChannel = async () => {
-            const token = localStorage.getItem("accessToken");
-            if (!token) return redirect("/login");
-
+        const fetchChannelData = async () => {
             try {
-                // We reuse servers API or create channels API. 
-                // For MVP, since we don't have GET /channels/:id, we can fetch server and find channel.
-                // Or implement GET /api/channels/:id.
-                // I'll assume we need to implement GET /api/channels/:id or fetch server.
-                // Let's fetch server and filter for now as it's easier without backend changes.
+                const res = await api.get(`/servers/${params.serverId}`);
+                const server = res.data;
+                const ch = server.channels.find((c: any) => c.id === params.channelId);
 
-                const res = await fetch(`http://localhost:3001/api/servers/${params.serverId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    const server = await res.json();
-                    const ch = server.channels.find((c: any) => c.id === Number(params.channelId) || c.id === params.channelId); // Handle string/number mismatch
-                    if (ch) {
-                        setChannel(ch);
-                        // Set mock member for now
-                        setMember({ id: "mock_member_id", role: "ADMIN" });
-                    } else {
-                        redirect(`/channels/${params.serverId}`);
-                    }
+                // Current user member check
+                // For MVP, we use the servers' response which should ideally include member info
+                // or we fetch current member. 
+                // Let's find the member for current user
+                // (This requires knowing current user id, usually available in JWT or via /users/me)
+                // For now, let's assume the first member is the user if we don't have /me endpoint
+                // but better is to look at data. 
+                // Since this is a client component, we'll try to get it.
+
+                if (ch) {
+                    setChannel(ch);
+                    // In a real app we'd fetch the specific member object
+                    setMember({ id: "current-member", role: "ADMIN" });
+                } else {
+                    router.push(`/channels/${params.serverId}`);
                 }
             } catch (e) {
                 console.error(e);
+                router.push("/login");
             }
         }
-        fetchChannel();
-    }, [params.channelId, params.serverId]);
+        fetchChannelData();
+    }, [params.channelId, params.serverId, router]);
 
     if (!channel || !member) {
-        return <div className="h-full flex items-center justify-center">Loading Channel...</div>
+        return (
+            <div className="flex flex-col flex-1 justify-center items-center bg-[#313338]">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent" />
+                <p className="mt-4 text-zinc-400">Yükleniyor...</p>
+            </div>
+        )
     }
 
     return (
-        <div className="bg-white dark:bg-[#313338] flex flex-col h-full">
+        <div className="bg-[#313338] flex flex-col h-full shadow-inner">
             <ChatHeader
                 name={channel.name}
                 serverId={params.serverId}
@@ -69,7 +73,7 @@ export default function ChannelIdPage({
                 name={channel.name}
                 chatId={channel.id}
                 type="channel"
-                apiUrl="/api/messages"
+                apiUrl="/messages"
                 socketUrl="/api/socket/messages"
                 socketQuery={{
                     channelId: channel.id,
