@@ -8,6 +8,7 @@ import { useSocket } from "@/components/providers/socket-provider";
 import { useModal } from "@/hooks/use-modal-store";
 import EmojiPicker from "emoji-picker-react";
 import { useState } from "react";
+import { api } from "@/lib/api";
 
 import {
     Form,
@@ -56,11 +57,11 @@ export const ChatInput = ({
         try {
             if (!socket) return;
 
-            socket.emit("send-message", {
+            await api.post("/messages", {
                 content: values.content,
+                fileUrl: null,
                 channelId: query.channelId,
                 serverId: query.serverId,
-                fileUrl: null
             });
 
             form.reset();

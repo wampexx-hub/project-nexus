@@ -27,6 +27,7 @@ export const ServerSidebar = ({
     const [server, setServer] = useState<any>(null);
     const router = useRouter();
     const { onOpen } = useModal();
+    const { currentChannelId } = useVoiceStore();
 
     useEffect(() => {
         const fetchServer = async () => {
@@ -41,6 +42,10 @@ export const ServerSidebar = ({
         fetchServer();
     }, [serverId, router]);
 
+    const handleVoiceChannelClick = (channelId: string, channelType: "AUDIO" | "VIDEO") => {
+        router.push(`/channels/${serverId}/${channelId}?type=${channelType}`);
+    };
+
     if (!server) {
         return (
             <div className="flex flex-col h-full text-primary w-full dark:bg-[#2B2D31] bg-[#F2F3F5] items-center justify-center">
@@ -52,12 +57,6 @@ export const ServerSidebar = ({
     const textChannels = server.channels?.filter((channel: any) => channel.type === "TEXT") || [];
     const audioChannels = server.channels?.filter((channel: any) => channel.type === "AUDIO") || [];
     const videoChannels = server.channels?.filter((channel: any) => channel.type === "VIDEO") || [];
-
-    const { currentChannelId } = useVoiceStore();
-
-    const handleVoiceChannelClick = (channelId: string, channelType: "AUDIO" | "VIDEO") => {
-        router.push(`/channels/${serverId}/${channelId}?type=${channelType}`);
-    };
 
     return (
         <div className="flex flex-col h-full text-primary w-full dark:bg-[#2B2D31] bg-[#F2F3F5]">

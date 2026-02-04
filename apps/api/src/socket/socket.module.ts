@@ -6,5 +6,6 @@ import { PrismaModule } from '../prisma/prisma.module';
 @Module({
   imports: [AuthModule, PrismaModule],
   providers: [SocketGateway],
+  exports: [SocketGateway],
 })
 export class SocketModule { }

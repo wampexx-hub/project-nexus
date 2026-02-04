@@ -11,6 +11,8 @@ export class ServersController {
   @UseGuards(AuthGuard)
   @Post()
   create(@Request() req: any, @Body() createServerDto: CreateServerDto) {
+    console.log('Creating server with data:', createServerDto);
+    console.log('User ID:', req.user.sub);
     return this.serversService.create(createServerDto, req.user.sub);
   }
 

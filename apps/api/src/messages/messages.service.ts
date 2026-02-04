@@ -2,14 +2,56 @@ import { Injectable } from '@nestjs/common';
 import { Message, MemberRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateMessageDto } from './dto/update-message.dto';
+import { SocketGateway } from '../socket/socket.gateway';
+import { CreateMessageDto } from './dto/create-message.dto';
 
 const MESSAGES_BATCH = 10;
 
 @Injectable()
 export class MessagesService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private socketGateway: SocketGateway
+    ) { }
+
+    async create(dto: CreateMessageDto, userId: string) {
+        const member = await this.prisma.member.findFirst({
+            where: {
+                serverId: dto.serverId,
+                userId: userId
+            }
+        });
+
+        if (!member) {
+            throw new Error("Member not found");
+        }
+
+        const message = await this.prisma.message.create({
+            data: {
+                content: dto.content,
+                fileUrl: dto.fileUrl,
+                channelId: dto.channelId,
+                memberId: member.id,
+            },
+            include: {
+                member: {
+                    include: {
+                        user: true,
+                    }
+                }
+            }
+        });
+
+        const roomKey = `chat:${dto.channelId}:messages`;
+
+        // Broadcast via SocketGateway
+        this.socketGateway.server.to(dto.channelId).emit(roomKey, message);
+
+        return message;
+    }
 
     async getMessages(cursor: string | undefined, channelId: string) {
+        // ... (rest of the file)
         if (!channelId) throw new Error("Channel ID missing");
 
         let messages: Message[] = [];

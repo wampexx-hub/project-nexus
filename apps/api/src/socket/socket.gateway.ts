@@ -30,7 +30,7 @@ interface VoiceChannel {
   cors: {
     origin: '*',
   },
-  namespace: 'api/socket/messages',  // Namespace to match frontend expectation
+  namespace: '/api/socket/messages',  // Namespace to match frontend expectation
 })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -146,10 +146,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // Emit to room
     // Event name usually convention like `chat:${channelId}:messages` or `new-message`
-    const roomKey = `chat:${payload.channelId}:messages`; // Matches frontend socket key usually
-
-    // But standard socket.io just 'new-message' in room
-    this.server.to(payload.channelId).emit('new-message', message);
+    const roomKey = `chat:${payload.channelId}:messages`;
+    this.server.to(payload.channelId).emit(roomKey, message);
 
     return message;
   }

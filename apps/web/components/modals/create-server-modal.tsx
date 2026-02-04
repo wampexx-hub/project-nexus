@@ -27,7 +27,7 @@ import { api } from "@/lib/api";
 
 const formSchema = z.object({
     name: z.string().min(1, {
-        message: "Server name is required."
+        message: "Sunucu adı gereklidir."
     }),
     imageUrl: z.string().optional()
 });
@@ -50,15 +50,33 @@ export const CreateServerModal = () => {
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
-            await api.post("/servers", values);
+            console.log("Submitting server creation form with values:", values);
+            const token = localStorage.getItem("accessToken");
+            console.log("Access token exists:", !!token);
+
+            const response = await api.post("/servers", values);
+            console.log("Server creation response:", response);
 
             form.reset();
             router.refresh();
             onClose();
-            window.location.reload(); // Refresh to show new server
-        } catch (error) {
-            console.log(error);
-            alert("Failed to create server. Check if you are logged in.");
+
+            // Re-adding reload because router.refresh() might not be enough for socket reconnection or state update in this specific setup
+            window.location.reload();
+        } catch (error: any) {
+            console.error("Server creation error detailed:", error);
+            if (error.response) {
+                console.error("Error response data:", error.response.data);
+                console.error("Error response status:", error.response.status);
+                console.error("Error response headers:", error.response.headers);
+            } else if (error.request) {
+                console.error("Error request:", error.request);
+            } else {
+                console.error("Error message:", error.message);
+            }
+
+            const msg = error.response?.data?.message || error.message || "Sunucu oluşturulamadı. Lütfen tekrar deneyin.";
+            alert(`Hata: ${msg}`);
         }
     }
 
@@ -75,7 +93,7 @@ export const CreateServerModal = () => {
                         Sunucunuzu Özelleştirin
                     </DialogTitle>
                     <DialogDescription className="text-center text-[#b5bac1]">
-                        Sunucunuza bir isim ve (isteğe bağlı) bir görsel vererek ona kişilik katın. Bunu daha sonra istediğiniz zaman değiştirebilirsiniz.
+                        Sunucunuza bir isim ve (isteğe bağlı) bir görsel vererek ona kişilik katın.
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -130,7 +148,7 @@ export const CreateServerModal = () => {
                                 İptal
                             </Button>
                             <Button disabled={isLoading} className="bg-[#5865f2] hover:bg-[#4752c4] text-white">
-                                Oluştur
+                                {isLoading ? "Oluşturuluyor..." : "Oluştur"}
                             </Button>
                         </DialogFooter>
                     </form>

@@ -34,13 +34,15 @@ export const SocketProvider = ({
         const token = localStorage.getItem("accessToken");
 
         // Connect to the specific namespace
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://192.168.1.86:3001";
-        const socketInstance = new (ClientIO as any)(`${apiUrl}/api/socket/messages`, {
+        // Connect to the specific namespace via Next.js Rewrite
+        // Connect to the specific namespace via Next.js Rewrite
+        const socketInstance = new (ClientIO as any)("/api/socket/messages", {
             path: "/socket.io",
             addTrailingSlash: false,
             auth: {
                 token
-            }
+            },
+            transports: ['websocket', 'polling']
         });
 
         socketInstance.on("connect", () => {

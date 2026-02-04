@@ -1,9 +1,10 @@
 "use client";
 
-import { Fragment, useRef, ElementRef } from "react";
+import { Fragment, useRef, ElementRef, useEffect } from "react";
 import { format } from "date-fns";
 import { Loader2, ServerCrash, Edit, Trash } from "lucide-react";
 import { useModal } from "@/hooks/use-modal-store";
+import { useSocket } from "@/components/providers/socket-provider";
 
 import { useChatQuery } from "@/hooks/use-chat-query";
 import { useChatSocket } from "@/hooks/use-chat-socket";
@@ -54,6 +55,12 @@ export const ChatMessages = ({
     const queryKey = `chat:${chatId}`;
     const addKey = `chat:${chatId}:messages`;
     const { onOpen } = useModal();
+    const { socket } = useSocket();
+
+    useEffect(() => {
+        if (!socket) return;
+        socket.emit("join-channel", { channelId: chatId });
+    }, [socket, chatId]);
 
     const {
         data,

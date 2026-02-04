@@ -1,9 +1,8 @@
 import axios from "axios";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://192.168.1.86:3001";
-
 export const api = axios.create({
-    baseURL: `${apiUrl}/api`,
+    baseURL: "/api",
+    timeout: 10000, // 10 seconds timeout
 });
 
 api.interceptors.request.use((config) => {

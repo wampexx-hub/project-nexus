@@ -67,9 +67,7 @@
 }
 
 @layer base {
-  * {
-    @apply border;
-  }
+  /* Removed global border application */
 
   body {
     @apply bg-background text-foreground;

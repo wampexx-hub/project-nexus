@@ -15,9 +15,14 @@ interface ChannelIdPageProps {
     }
 }
 
-export default function ChannelIdPage({
-    params
-}: ChannelIdPageProps) {
+import { useParams } from "next/navigation";
+
+export default function ChannelIdPage() {
+    const params = useParams();
+    // params in useParams is a generic object, so safely access properties or use type assertion
+    const unwrappedParams = params as { serverId: string; channelId: string };
+
+
     const [channel, setChannel] = useState<any>(null);
     const [member, setMember] = useState<any>(null);
     const [user, setUser] = useState<any>(null);
@@ -26,29 +31,48 @@ export default function ChannelIdPage({
     useEffect(() => {
         const fetchChannelData = async () => {
             try {
+                if (!unwrappedParams) {
+                    console.log("Params not yet ready");
+                    return;
+                }
+
+                console.log("Fetching data for params:", unwrappedParams);
+
                 // Fetch user info from token
                 const userRes = await api.get("/auth/me");
+                console.log("User data:", userRes.data);
                 setUser(userRes.data);
 
-                const res = await api.get(`/servers/${params.serverId}`);
+                console.log(`Fetching server: /servers/${unwrappedParams.serverId}`);
+                const res = await api.get(`/servers/${unwrappedParams.serverId}`);
+                console.log("Server data:", res.data);
                 const server = res.data;
-                const ch = server.channels.find((c: any) => c.id === params.channelId || c.id === Number(params.channelId));
+
+                const ch = server.channels.find((c: any) => c.id === unwrappedParams.channelId);
+                console.log("Found channel:", ch);
 
                 if (ch) {
                     setChannel(ch);
                     // Find the current user's member info
                     const currentMember = server.members?.find((m: any) => m.userId === userRes.data.id);
+                    console.log("Found member:", currentMember);
                     setMember(currentMember || { id: "current-member", role: "ADMIN", userId: userRes.data.id });
                 } else {
-                    router.push(`/channels/${params.serverId}`);
+                    console.error("Channel not found in server channels. Redirecting.");
+                    console.log("Available channels:", server.channels.map((c: any) => c.id));
+                    // router.push(`/channels/${unwrappedParams.serverId}`);
                 }
-            } catch (e) {
-                console.error(e);
-                router.push("/login");
+            } catch (e: any) {
+                console.error("Error in fetchChannelData:", e);
+                if (e.response) {
+                    console.error("Response data:", e.response.data);
+                    console.error("Response status:", e.response.status);
+                }
+                // router.push("/login"); // Commented out to see error
             }
         }
         fetchChannelData();
-    }, [params.channelId, params.serverId, router]);
+    }, [unwrappedParams, router]);
 
     if (!channel || !member) {
         return (
@@ -67,7 +91,7 @@ export default function ChannelIdPage({
                     channelId={channel.id}
                     channelName={channel.name}
                     channelType={channel.type}
-                    serverId={params.serverId}
+                    serverId={unwrappedParams?.serverId || ""}
                     username={user?.username || "User"}
                     userImageUrl={user?.imageUrl}
                     userId={user?.id || "unknown"}
@@ -78,10 +102,10 @@ export default function ChannelIdPage({
 
     // Render chat interface for TEXT channels
     return (
-        <div className="bg-[#313338] flex flex-col h-full shadow-inner">
+        <div className="bg-[#313338] flex flex-col h-[calc(100vh-48px)] md:h-[calc(100vh-0px)] shadow-inner">
             <ChatHeader
                 name={channel.name}
-                serverId={params.serverId}
+                serverId={unwrappedParams?.serverId || ""}
                 type="channel"
             />
             <ChatMessages
@@ -93,7 +117,7 @@ export default function ChannelIdPage({
                 socketUrl="/api/socket/messages"
                 socketQuery={{
                     channelId: channel.id,
-                    serverId: params.serverId,
+                    serverId: unwrappedParams?.serverId || "",
                 }}
                 paramKey="channelId"
                 paramValue={channel.id}
@@ -104,7 +128,7 @@ export default function ChannelIdPage({
                 apiUrl="/api/socket/messages"
                 query={{
                     channelId: channel.id,
-                    serverId: params.serverId,
+                    serverId: unwrappedParams?.serverId || "",
                 }}
             />
         </div>
