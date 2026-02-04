@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Settings } from "lucide-react";
+import { Plus, Settings, Volume2, Video, ChevronDown, UserPlus, Trash, Hash } from "lucide-react";
 import { useModal } from "@/hooks/use-modal-store";
+import { useVoiceStore } from "@/hooks/use-voice-store";
+import { VoiceChannelUsers } from "@/components/voice/voice-channel-users";
+import { VoiceStatusPanel } from "@/components/voice/voice-status-panel";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -11,7 +14,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, UserPlus, Trash, Hash, Volume2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 
 interface ServerSidebarProps {
@@ -48,6 +51,13 @@ export const ServerSidebar = ({
 
     const textChannels = server.channels?.filter((channel: any) => channel.type === "TEXT") || [];
     const audioChannels = server.channels?.filter((channel: any) => channel.type === "AUDIO") || [];
+    const videoChannels = server.channels?.filter((channel: any) => channel.type === "VIDEO") || [];
+
+    const { currentChannelId } = useVoiceStore();
+
+    const handleVoiceChannelClick = (channelId: string, channelType: "AUDIO" | "VIDEO") => {
+        router.push(`/channels/${serverId}/${channelId}?type=${channelType}`);
+    };
 
     return (
         <div className="flex flex-col h-full text-primary w-full dark:bg-[#2B2D31] bg-[#F2F3F5]">
@@ -138,22 +148,60 @@ export const ServerSidebar = ({
                                 <Plus className="h-4 w-4" />
                             </button>
                         </div>
-                        <div className="space-y-[2px]">
-                            {audioChannels.map((channel: any) => (
-                                <button
-                                    key={channel.id}
-                                    className="group px-2 py-2 rounded-md flex items-center gap-x-2 w-full hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 transition mb-1"
+                        {audioChannels.map((channel: any) => (
+                            <div key={channel.id}>
+                                <div
+                                    onClick={() => handleVoiceChannelClick(channel.id, "AUDIO")}
+                                    className={cn(
+                                        "p-2 hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 rounded-md cursor-pointer flex items-center gap-x-2",
+                                        currentChannelId === channel.id
+                                            ? "bg-zinc-700/20 text-zinc-200"
+                                            : "text-zinc-600 dark:text-zinc-400"
+                                    )}
                                 >
-                                    <Volume2 className="flex-shrink-0 w-4 h-4 text-zinc-500 dark:text-zinc-400" />
-                                    <p className="line-clamp-1 font-semibold text-sm text-zinc-500 group-hover:text-zinc-600 dark:text-zinc-400 dark:group-hover:text-zinc-300 transition">
-                                        {channel.name}
-                                    </p>
-                                </button>
-                            ))}
+                                    <Volume2 className="h-4 w-4 flex-shrink-0" />
+                                    <span className="truncate">{channel.name}</span>
+                                </div>
+                                <VoiceChannelUsers channelId={channel.id} />
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {!!videoChannels?.length && (
+                    <div className="mb-2">
+                        <div className="flex items-center justify-between py-2">
+                            <p className="text-xs uppercase font-semibold text-zinc-500 dark:text-zinc-400">
+                                Video Kanalları
+                            </p>
+                            <button
+                                onClick={() => onOpen("createChannel")}
+                                className="text-zinc-500 hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-300 transition"
+                            >
+                                <Plus className="h-4 w-4" />
+                            </button>
                         </div>
+                        {videoChannels.map((channel: any) => (
+                            <div key={channel.id}>
+                                <div
+                                    onClick={() => handleVoiceChannelClick(channel.id, "VIDEO")}
+                                    className={cn(
+                                        "p-2 hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 rounded-md cursor-pointer flex items-center gap-x-2",
+                                        currentChannelId === channel.id
+                                            ? "bg-zinc-700/20 text-zinc-200"
+                                            : "text-zinc-600 dark:text-zinc-400"
+                                    )}
+                                >
+                                    <Video className="h-4 w-4 flex-shrink-0" />
+                                    <span className="truncate">{channel.name}</span>
+                                </div>
+                                <VoiceChannelUsers channelId={channel.id} />
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>
+
+            <VoiceStatusPanel />
         </div>
     )
 }
