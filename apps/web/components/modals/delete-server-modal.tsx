@@ -27,11 +27,10 @@ export const DeleteServerModal = () => {
             setIsLoading(true);
             await api.delete(`/servers/${server?.id}`);
             onClose();
-            router.refresh();
-            router.push("/channels");
+            // Use window.location for full page refresh to update sidebar
+            window.location.href = "/channels";
         } catch (error) {
             console.error("Failed to delete server:", error);
-        } finally {
             setIsLoading(false);
         }
     };
