@@ -16,7 +16,7 @@ interface VoiceState {
     currentChannelId: string | null;
     currentServerId: string | null;
     channelName: string | null;
-    channelType: "AUDIO" | "VIDEO" | null;
+    channelType: "AUDIO" | "VIDEO" | "TEXT" | null;
 
     // Participants
     participants: VoiceParticipant[];
@@ -32,7 +32,7 @@ interface VoiceState {
     isConnected: boolean;
 
     // Actions
-    joinChannel: (channelId: string, serverId: string, channelName: string, channelType: "AUDIO" | "VIDEO") => void;
+    joinChannel: (channelId: string, serverId: string, channelName: string, channelType: "AUDIO" | "VIDEO" | "TEXT") => void;
     leaveChannel: () => void;
     setParticipants: (participants: VoiceParticipant[]) => void;
     addParticipant: (participant: VoiceParticipant) => void;
