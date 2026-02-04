@@ -17,8 +17,8 @@ const fontMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Nexus | Discord Clone",
-  description: "A clone of Discord built with Next.js and NestJS",
+  title: "Project Nexus",
+  description: "A modern communication platform built with Next.js and NestJS",
 };
 
 export default function RootLayout({

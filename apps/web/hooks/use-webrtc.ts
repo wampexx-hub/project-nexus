@@ -242,6 +242,7 @@ export const useWebRTC = () => {
                     },
                 });
                 const videoTrack = videoStream.getVideoTracks()[0];
+                if (!videoTrack) return;
 
                 // Add video track to local stream
                 localStreamRef.current.addTrack(videoTrack);
@@ -267,6 +268,7 @@ export const useWebRTC = () => {
             try {
                 const stream = await getScreenStream();
                 const screenTrack = stream.getVideoTracks()[0];
+                if (!screenTrack) return;
 
                 // Replace video track in all peer connections
                 peerConnectionsRef.current.forEach(({ pc }) => {
@@ -329,8 +331,8 @@ export const useWebRTC = () => {
         const handleParticipantJoined = (data: { channelId: string; participant: VoiceParticipant }) => {
             if (data.channelId === currentChannelId) {
                 addParticipant(data.participant);
-                // Create offer for the new participant
-                createOffer(data.participant.odimUserId);
+                // Do NOT create offer here. The newcomer will create the offer.
+                // createOffer(data.participant.odimUserId);
             }
         };
 
