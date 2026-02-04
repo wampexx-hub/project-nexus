@@ -9,6 +9,7 @@ import { MembersModal } from "@/components/modals/members-modal";
 import { EditMessageModal } from "@/components/modals/edit-message-modal";
 import { DeleteMessageModal } from "@/components/modals/delete-message-modal";
 import { EditServerModal } from "@/components/modals/edit-server-modal";
+import { DeleteServerModal } from "@/components/modals/delete-server-modal";
 
 export const ModalProvider = () => {
     const [isMounted, setIsMounted] = useState(false);
@@ -31,6 +32,7 @@ export const ModalProvider = () => {
             <EditMessageModal />
             <DeleteMessageModal />
             <EditServerModal />
+            <DeleteServerModal />
         </>
     )
 }

@@ -350,10 +350,11 @@ export const useWebRTC = () => {
 
     // Toggle video
     const toggleVideo = useCallback(async (enabled: boolean) => {
-        if (!localStreamRef.current) return;
+        console.log("toggleVideo called:", enabled);
 
         if (enabled) {
             try {
+                console.log("Getting video stream...");
                 const videoStream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         width: { ideal: 1280 },
@@ -362,23 +363,62 @@ export const useWebRTC = () => {
                     },
                 });
                 const videoTrack = videoStream.getVideoTracks()[0];
-                if (!videoTrack) return;
+                if (!videoTrack) {
+                    console.error("No video track obtained");
+                    return;
+                }
+
+                console.log("Got video track:", videoTrack.label);
 
                 // Add video track to local stream
-                localStreamRef.current.addTrack(videoTrack);
+                if (localStreamRef.current) {
+                    // Remove existing video tracks first
+                    localStreamRef.current.getVideoTracks().forEach(track => {
+                        track.stop();
+                        localStreamRef.current?.removeTrack(track);
+                    });
+                    localStreamRef.current.addTrack(videoTrack);
+                } else {
+                    // Create new stream with the video track
+                    localStreamRef.current = new MediaStream([videoTrack]);
+                }
 
-                // Add video track to all peer connections
-                peerConnectionsRef.current.forEach(({ pc }) => {
-                    pc.addTrack(videoTrack, localStreamRef.current!);
+                // Add or replace video track in all peer connections
+                peerConnectionsRef.current.forEach(({ pc, odimUserId }) => {
+                    const videoSender = pc.getSenders().find(s => s.track?.kind === "video");
+                    if (videoSender) {
+                        console.log(`Replacing video track for ${odimUserId}`);
+                        videoSender.replaceTrack(videoTrack);
+                    } else {
+                        console.log(`Adding video track for ${odimUserId}`);
+                        pc.addTrack(videoTrack, localStreamRef.current!);
+                    }
                 });
+
+                console.log("Video enabled successfully");
             } catch (error) {
                 console.error("Failed to enable video:", error);
+                throw error;
             }
         } else {
-            localStreamRef.current.getVideoTracks().forEach(track => {
-                track.stop();
-                localStreamRef.current?.removeTrack(track);
+            console.log("Disabling video...");
+            if (localStreamRef.current) {
+                localStreamRef.current.getVideoTracks().forEach(track => {
+                    console.log("Stopping video track:", track.label);
+                    track.stop();
+                    localStreamRef.current?.removeTrack(track);
+                });
+            }
+
+            // Remove video from peer connections
+            peerConnectionsRef.current.forEach(({ pc, odimUserId }) => {
+                const videoSender = pc.getSenders().find(s => s.track?.kind === "video");
+                if (videoSender && videoSender.track) {
+                    console.log(`Removing video track from ${odimUserId}`);
+                    videoSender.replaceTrack(null);
+                }
             });
+            console.log("Video disabled");
         }
     }, []);
 

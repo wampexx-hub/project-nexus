@@ -31,6 +31,7 @@ interface ChannelCallPanelProps {
     username: string;
     userImageUrl?: string;
     userId: string;
+    autoJoin?: boolean;
 }
 
 interface MiniParticipantProps {
@@ -103,6 +104,7 @@ export const ChannelCallPanel = ({
     username,
     userImageUrl,
     userId,
+    autoJoin = false,
 }: ChannelCallPanelProps) => {
     const { socket, isConnected: socketConnected } = useSocket();
     const {
@@ -122,6 +124,8 @@ export const ChannelCallPanel = ({
         toggleDeafen,
         toggleVideo,
         toggleScreenShare,
+        setParticipants,
+        addParticipant,
     } = useVoiceStore();
 
     const {
@@ -138,42 +142,74 @@ export const ChannelCallPanel = ({
     const [speakingUsers, setSpeakingUsers] = useState<Set<string>>(new Set());
     const [isExpanded, setIsExpanded] = useState(true);
     const [isMaximized, setIsMaximized] = useState(false);
+    const [joinError, setJoinError] = useState<string | null>(null);
+    const hasAutoJoinedRef = useRef(false);
 
     const isInCall = currentChannelId === channelId && isVoiceConnected;
     const isJoiningThisChannel = currentChannelId === channelId && isConnecting;
 
     // Join voice channel
     const handleJoinCall = useCallback(async () => {
-        if (!socket || !socketConnected) return;
+        console.log("handleJoinCall called", { socket: !!socket, socketConnected, channelId });
+
+        if (!socket) {
+            setJoinError("Socket bağlantısı yok");
+            console.error("No socket available");
+            return;
+        }
+
+        if (!socketConnected) {
+            setJoinError("Socket bağlı değil, yeniden deneniyor...");
+            console.error("Socket not connected");
+            return;
+        }
 
         try {
+            setJoinError(null);
             setConnecting(true);
             joinChannel(channelId, serverId, channelName, "TEXT");
 
             // Get local media stream (audio only by default, video can be turned on later)
+            console.log("Getting local stream...");
             const stream = await getLocalStream(false);
+            console.log("Got local stream:", stream);
             setLocalStream(stream);
 
             // Join the voice channel via socket
+            console.log("Emitting join-voice-channel...");
             socket.emit("join-voice-channel", {
                 channelId,
                 serverId,
                 username,
                 imageUrl: userImageUrl,
             }, (response: { existingParticipants: VoiceParticipant[] }) => {
+                console.log("join-voice-channel response:", response);
                 // Create offers for existing participants
                 if (response?.existingParticipants) {
+                    setParticipants(response.existingParticipants);
                     response.existingParticipants.forEach((participant) => {
+                        console.log("Creating offer for participant:", participant.odimUserId);
                         createOffer(participant.odimUserId);
                     });
                 }
                 setConnected(true);
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to join call:", error);
+            setJoinError(error?.message || "Görüşmeye katılınamadı");
             setConnecting(false);
+            leaveChannel();
         }
-    }, [socket, socketConnected, channelId, serverId, channelName, username, userImageUrl, getLocalStream, createOffer, joinChannel, setConnected, setConnecting]);
+    }, [socket, socketConnected, channelId, serverId, channelName, username, userImageUrl, getLocalStream, createOffer, joinChannel, setConnected, setConnecting, leaveChannel, setParticipants]);
+
+    // Auto-join for voice channels
+    useEffect(() => {
+        if (autoJoin && socketConnected && !isInCall && !isJoiningThisChannel && !hasAutoJoinedRef.current) {
+            console.log("Auto-joining voice channel");
+            hasAutoJoinedRef.current = true;
+            handleJoinCall();
+        }
+    }, [autoJoin, socketConnected, isInCall, isJoiningThisChannel, handleJoinCall]);
 
     // Leave voice channel
     const handleLeaveCall = useCallback(() => {
@@ -198,13 +234,26 @@ export const ChannelCallPanel = ({
     };
 
     const handleToggleVideo = async () => {
-        await toggleVideoStream(!isVideoOn);
-        toggleVideo();
+        try {
+            await toggleVideoStream(!isVideoOn);
+            toggleVideo();
+            // Update local stream reference
+            const stream = getLocalStreamRef();
+            if (stream) {
+                setLocalStream(stream);
+            }
+        } catch (error) {
+            console.error("Failed to toggle video:", error);
+        }
     };
 
     const handleToggleScreenShare = async () => {
-        await toggleScreenShareStream(!isScreenSharing);
-        toggleScreenShare();
+        try {
+            await toggleScreenShareStream(!isScreenSharing);
+            toggleScreenShare();
+        } catch (error) {
+            console.error("Failed to toggle screen share:", error);
+        }
     };
 
     // Audio level detection for speaking indicator
@@ -270,17 +319,27 @@ export const ChannelCallPanel = ({
                     <div className="flex items-center gap-2 text-zinc-400">
                         <Users className="h-4 w-4" />
                         <span className="text-sm">
-                            {participants.length > 0
-                                ? `${participants.length} kişi görüşmede`
-                                : "Görüşme başlatmak için katılın"}
+                            {joinError ? (
+                                <span className="text-red-400">{joinError}</span>
+                            ) : participants.length > 0 ? (
+                                `${participants.length} kişi görüşmede`
+                            ) : (
+                                "Görüşme başlatmak için katılın"
+                            )}
                         </span>
                     </div>
                     <button
                         onClick={handleJoinCall}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium transition-colors"
+                        disabled={!socketConnected}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 text-white rounded-md text-sm font-medium transition-colors",
+                            socketConnected
+                                ? "bg-green-600 hover:bg-green-700"
+                                : "bg-gray-500 cursor-not-allowed"
+                        )}
                     >
                         <Phone className="h-4 w-4" />
-                        Görüşmeye Katıl
+                        {socketConnected ? "Görüşmeye Katıl" : "Bağlanıyor..."}
                     </button>
                 </div>
             </div>
