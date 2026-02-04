@@ -75,7 +75,7 @@ export const VoiceControls = ({ channelType = "AUDIO" }: VoiceControlsProps) => 
                         ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
                         : "bg-zinc-700/50 text-zinc-200 hover:bg-zinc-700"
                 )}
-                title={isMuted ? "Unmute" : "Mute"}
+                title={isMuted ? "Sesi Aç" : "Sessize Al"}
             >
                 {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
             </button>
@@ -89,26 +89,24 @@ export const VoiceControls = ({ channelType = "AUDIO" }: VoiceControlsProps) => 
                         ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
                         : "bg-zinc-700/50 text-zinc-200 hover:bg-zinc-700"
                 )}
-                title={isDeafened ? "Undeafen" : "Deafen"}
+                title={isDeafened ? "Kulaklığı Aç" : "Sağır Modu"}
             >
                 {isDeafened ? <HeadphoneOff className="h-5 w-5" /> : <Headphones className="h-5 w-5" />}
             </button>
 
-            {/* Video Button - Only show for VIDEO channels or when user wants video in voice */}
-            {(channelType === "VIDEO" || isVideoOn) && (
-                <button
-                    onClick={handleToggleVideo}
-                    className={cn(
-                        "p-3 rounded-full transition-colors",
-                        isVideoOn
-                            ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                            : "bg-zinc-700/50 text-zinc-200 hover:bg-zinc-700"
-                    )}
-                    title={isVideoOn ? "Turn Off Camera" : "Turn On Camera"}
-                >
-                    {isVideoOn ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
-                </button>
-            )}
+            {/* Video Button - Always show so users can enable video in any channel */}
+            <button
+                onClick={handleToggleVideo}
+                className={cn(
+                    "p-3 rounded-full transition-colors",
+                    isVideoOn
+                        ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                        : "bg-zinc-700/50 text-zinc-200 hover:bg-zinc-700"
+                )}
+                title={isVideoOn ? "Kamerayı Kapat" : "Kamerayı Aç"}
+            >
+                {isVideoOn ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
+            </button>
 
             {/* Screen Share Button */}
             <button
@@ -119,7 +117,7 @@ export const VoiceControls = ({ channelType = "AUDIO" }: VoiceControlsProps) => 
                         ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
                         : "bg-zinc-700/50 text-zinc-200 hover:bg-zinc-700"
                 )}
-                title={isScreenSharing ? "Stop Screen Share" : "Share Screen"}
+                title={isScreenSharing ? "Paylaşımı Durdur" : "Ekran Paylaş"}
             >
                 {isScreenSharing ? <Monitor className="h-5 w-5" /> : <MonitorOff className="h-5 w-5" />}
             </button>
@@ -128,7 +126,7 @@ export const VoiceControls = ({ channelType = "AUDIO" }: VoiceControlsProps) => 
             <button
                 onClick={handleDisconnect}
                 className="p-3 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
-                title="Disconnect"
+                title="Bağlantıyı Kes"
             >
                 <PhoneOff className="h-5 w-5" />
             </button>
@@ -136,7 +134,7 @@ export const VoiceControls = ({ channelType = "AUDIO" }: VoiceControlsProps) => 
             {/* Settings Button */}
             <button
                 className="p-3 rounded-full bg-zinc-700/50 text-zinc-200 hover:bg-zinc-700 transition-colors"
-                title="Voice Settings"
+                title="Ses Ayarları"
             >
                 <Settings className="h-5 w-5" />
             </button>

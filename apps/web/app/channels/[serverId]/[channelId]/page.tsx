@@ -5,6 +5,7 @@ import { ChatHeader } from "@/components/chat/chat-header";
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessages } from "@/components/chat/chat-messages";
 import { MediaRoom } from "@/components/voice/media-room";
+import { ChannelCallPanel } from "@/components/voice/channel-call-panel";
 import { redirect, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
@@ -100,13 +101,22 @@ export default function ChannelIdPage() {
         );
     }
 
-    // Render chat interface for TEXT channels
+    // Render chat interface for TEXT channels with integrated voice/video
     return (
         <div className="bg-[#313338] flex flex-col h-[calc(100vh-48px)] md:h-[calc(100vh-0px)] shadow-inner">
             <ChatHeader
                 name={channel.name}
                 serverId={unwrappedParams?.serverId || ""}
                 type="channel"
+            />
+            {/* Integrated Voice/Video Call Panel */}
+            <ChannelCallPanel
+                channelId={channel.id}
+                channelName={channel.name}
+                serverId={unwrappedParams?.serverId || ""}
+                username={user?.username || "User"}
+                userImageUrl={user?.imageUrl}
+                userId={user?.id || "unknown"}
             />
             <ChatMessages
                 member={member}

@@ -11,7 +11,7 @@ import { Mic, MicOff, Video, VideoOff, Monitor, Loader2 } from "lucide-react";
 interface MediaRoomProps {
     channelId: string;
     channelName: string;
-    channelType: "AUDIO" | "VIDEO";
+    channelType: "AUDIO" | "VIDEO" | "TEXT";
     serverId: string;
     username: string;
     userImageUrl?: string;
