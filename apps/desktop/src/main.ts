@@ -15,12 +15,17 @@ function createWindow() {
     // In dev, load localhost. In prod, load index.html
     const isDev = !app.isPackaged;
 
+    // Ignore self-signed certificate errors
+    app.commandLine.appendSwitch('ignore-certificate-errors');
+
     if (isDev) {
         win.loadURL('http://localhost:3000');
         win.webContents.openDevTools();
     } else {
-        // Phase 5: Implement static file loading
-        console.log("Production build loading not yet implemented");
+        // Load the production URL
+        // Using nexus.local as configured in Nginx
+        win.loadURL('https://nexus.local');
+        // fallback or alternative: win.loadURL('https://192.168.1.103'); 
     }
 }
 

@@ -167,6 +167,12 @@ export const ChannelCallPanel = ({
         try {
             setJoinError(null);
             setConnecting(true);
+
+            // Check if secure context
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error("Mikrofon erişimi için HTTPS veya localhost gereklidir. (IP adresi üzerinden bağlanılamaz)");
+            }
+
             joinChannel(channelId, serverId, channelName, "TEXT");
 
             // Get local media stream (audio only by default, video can be turned on later)
@@ -177,13 +183,32 @@ export const ChannelCallPanel = ({
 
             // Join the voice channel via socket
             console.log("Emitting join-voice-channel...");
+
+            // Add timeout for socket response
+            const connectionTimeout = setTimeout(() => {
+                console.error("Connection timed out");
+                setJoinError("Sunucu yanıt vermedi (Zaman aşımı)");
+                setConnecting(false);
+                leaveChannel();
+            }, 10000);
+
             socket.emit("join-voice-channel", {
                 channelId,
                 serverId,
                 username,
                 imageUrl: userImageUrl,
-            }, (response: { existingParticipants: VoiceParticipant[] }) => {
+            }, (response: { existingParticipants: VoiceParticipant[], error?: string }) => {
+                clearTimeout(connectionTimeout);
                 console.log("join-voice-channel response:", response);
+
+                if (response?.error) {
+                    console.error("Join failed on server:", response.error);
+                    setJoinError(response.error);
+                    setConnecting(false);
+                    leaveChannel();
+                    return;
+                }
+
                 // Create offers for existing participants
                 if (response?.existingParticipants) {
                     setParticipants(response.existingParticipants);

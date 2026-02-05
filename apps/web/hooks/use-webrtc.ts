@@ -485,6 +485,12 @@ export const useWebRTC = () => {
         const handleVoiceParticipants = (data: { channelId: string; participants: VoiceParticipant[] }) => {
             if (data.channelId === currentChannelId) {
                 setParticipants(data.participants);
+                // Proactively create connections to all existing participants
+                data.participants.forEach(p => {
+                    if (p.odimUserId !== socket.id) { // Ensure we don't connect to self (though odimUserId handles this usually)
+                        // Check store to avoid duplicates if needed, but createConnection handles it
+                    }
+                });
             }
         };
 

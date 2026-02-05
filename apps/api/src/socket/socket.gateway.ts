@@ -196,7 +196,12 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   ) {
     const userId = client.data.userId;
-    if (!userId || !payload.channelId) return;
+    console.log(`Join voice request: User=${userId}, Channel=${payload.channelId}`);
+
+    if (!userId || !payload.channelId) {
+      console.warn("Invalid voice join request parameters");
+      return { error: "Invalid parameters" };
+    }
 
     // First leave any existing voice channel
     this.voiceChannels.forEach((channel, channelId) => {

@@ -106,6 +106,7 @@ export const MediaRoom = ({
         isVideoOn,
         isScreenSharing,
         joinChannel,
+        leaveChannel,
         setConnected,
         setConnecting,
     } = useVoiceStore();
@@ -123,17 +124,35 @@ export const MediaRoom = ({
                 setConnecting(true);
                 joinChannel(channelId, serverId, channelName, channelType);
 
+                console.log("Requesting local media stream...");
                 // Get local media stream
                 const stream = await getLocalStream(channelType === "VIDEO");
+                console.log("Local media stream obtained.");
                 setLocalStream(stream);
 
+                console.log("Emitting join-voice-channel to socket...");
                 // Join the voice channel via socket
+                // Add explicit timeout to prevent getting stuck
+                const timeout = setTimeout(() => {
+                    console.error("Connection timed out - forcing state reset");
+                    setConnecting(false);
+                }, 15000);
+
                 socket.emit("join-voice-channel", {
                     channelId,
                     serverId,
                     username,
                     imageUrl: userImageUrl,
-                }, (response: { existingParticipants: VoiceParticipant[] }) => {
+                }, (response: { existingParticipants: VoiceParticipant[], error?: string }) => {
+                    clearTimeout(timeout);
+                    console.log("Received join-voice-channel response:", response);
+
+                    if (response?.error) {
+                        console.error("Join failed:", response.error);
+                        setConnecting(false);
+                        return;
+                    }
+
                     // Create offers for existing participants
                     if (response?.existingParticipants) {
                         response.existingParticipants.forEach((participant) => {
@@ -159,6 +178,8 @@ export const MediaRoom = ({
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
             }
+            // Ensure we reset the global store state
+            leaveChannel();
         };
     }, [socket, isConnected, channelId]);
 
@@ -265,7 +286,7 @@ export const MediaRoom = ({
             </div>
 
             {/* Controls */}
-            <VoiceControls channelType={channelType} />
+            <VoiceControls channelType={channelType === "TEXT" ? "AUDIO" : channelType} />
         </div>
     );
 };
