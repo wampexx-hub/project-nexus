@@ -27,6 +27,12 @@ export class MessagesController {
     }
 
     @UseGuards(AuthGuard)
+    @Get('pinned/:channelId')
+    async getPinnedMessages(@Param('channelId') channelId: string) {
+        return this.messagesService.getPinnedMessages(channelId);
+    }
+
+    @UseGuards(AuthGuard)
     @Patch(':id')
     async updateMessage(
         @Request() req: any,
@@ -34,6 +40,15 @@ export class MessagesController {
         @Body() updateMessageDto: UpdateMessageDto
     ) {
         return this.messagesService.updateMessage(id, updateMessageDto, req.user.sub);
+    }
+
+    @UseGuards(AuthGuard)
+    @Patch(':id/pin')
+    async togglePin(
+        @Request() req: any,
+        @Param('id') id: string
+    ) {
+        return this.messagesService.togglePin(id, req.user.sub);
     }
 
     @UseGuards(AuthGuard)

@@ -4,72 +4,41 @@ import { useEffect, useState } from "react";
 import { ChatHeader } from "@/components/chat/chat-header";
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessages } from "@/components/chat/chat-messages";
-import { MediaRoom } from "@/components/voice/media-room";
 import { ChannelCallPanel } from "@/components/voice/channel-call-panel";
-import { redirect, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-
-interface ChannelIdPageProps {
-    params: {
-        serverId: string;
-        channelId: string;
-    }
-}
-
 import { useParams } from "next/navigation";
 
 export default function ChannelIdPage() {
     const params = useParams();
-    // params in useParams is a generic object, so safely access properties or use type assertion
     const unwrappedParams = params as { serverId: string; channelId: string };
-
 
     const [channel, setChannel] = useState<any>(null);
     const [member, setMember] = useState<any>(null);
     const [user, setUser] = useState<any>(null);
+    const [replyTo, setReplyTo] = useState<any>(null);
     const router = useRouter();
 
     useEffect(() => {
         const fetchChannelData = async () => {
             try {
-                if (!unwrappedParams) {
-                    console.log("Params not yet ready");
-                    return;
-                }
+                if (!unwrappedParams) return;
 
-                console.log("Fetching data for params:", unwrappedParams);
-
-                // Fetch user info from token
                 const userRes = await api.get("/auth/me");
-                console.log("User data:", userRes.data);
                 setUser(userRes.data);
 
-                console.log(`Fetching server: /servers/${unwrappedParams.serverId}`);
                 const res = await api.get(`/servers/${unwrappedParams.serverId}`);
-                console.log("Server data:", res.data);
                 const server = res.data;
 
                 const ch = server.channels.find((c: any) => c.id === unwrappedParams.channelId);
-                console.log("Found channel:", ch);
 
                 if (ch) {
                     setChannel(ch);
-                    // Find the current user's member info
                     const currentMember = server.members?.find((m: any) => m.userId === userRes.data.id);
-                    console.log("Found member:", currentMember);
                     setMember(currentMember || { id: "current-member", role: "ADMIN", userId: userRes.data.id });
-                } else {
-                    console.error("Channel not found in server channels. Redirecting.");
-                    console.log("Available channels:", server.channels.map((c: any) => c.id));
-                    // router.push(`/channels/${unwrappedParams.serverId}`);
                 }
             } catch (e: any) {
                 console.error("Error in fetchChannelData:", e);
-                if (e.response) {
-                    console.error("Response data:", e.response.data);
-                    console.error("Response status:", e.response.status);
-                }
-                // router.push("/login"); // Commented out to see error
             }
         }
         fetchChannelData();
@@ -84,10 +53,8 @@ export default function ChannelIdPage() {
         )
     }
 
-    // Determine if this is a voice-enabled channel (AUDIO or VIDEO types auto-join voice)
     const isVoiceChannel = channel.type === "AUDIO" || channel.type === "VIDEO";
 
-    // All channels now have both chat and voice/video capability
     return (
         <div className="bg-[#313338] flex flex-col h-[calc(100vh-48px)] md:h-[calc(100vh-0px)] shadow-inner">
             <ChatHeader
@@ -95,8 +62,8 @@ export default function ChannelIdPage() {
                 serverId={unwrappedParams?.serverId || ""}
                 type="channel"
                 channelType={channel.type}
+                channelId={channel.id}
             />
-            {/* Integrated Voice/Video Call Panel - shown for all channels */}
             <ChannelCallPanel
                 channelId={channel.id}
                 channelName={channel.name}
@@ -119,6 +86,7 @@ export default function ChannelIdPage() {
                 }}
                 paramKey="channelId"
                 paramValue={channel.id}
+                onReplySelect={(msg) => setReplyTo(msg)}
             />
             <ChatInput
                 name={channel.name}
@@ -128,6 +96,8 @@ export default function ChannelIdPage() {
                     channelId: channel.id,
                     serverId: unwrappedParams?.serverId || "",
                 }}
+                replyTo={replyTo}
+                onCancelReply={() => setReplyTo(null)}
             />
         </div>
     );

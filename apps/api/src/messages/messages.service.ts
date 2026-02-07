@@ -5,7 +5,33 @@ import { UpdateMessageDto } from './dto/update-message.dto';
 import { SocketGateway } from '../socket/socket.gateway';
 import { CreateMessageDto } from './dto/create-message.dto';
 
-const MESSAGES_BATCH = 10;
+const MESSAGES_BATCH = 15;
+
+const messageInclude = {
+    member: {
+        include: {
+            user: true,
+        }
+    },
+    reactions: {
+        include: {
+            user: {
+                select: { id: true, username: true, imageUrl: true }
+            }
+        }
+    },
+    replyTo: {
+        include: {
+            member: {
+                include: {
+                    user: {
+                        select: { id: true, username: true }
+                    }
+                }
+            }
+        }
+    }
+};
 
 @Injectable()
 export class MessagesService {
@@ -26,98 +52,63 @@ export class MessagesService {
             throw new Error("Member not found");
         }
 
+        const data: any = {
+            content: dto.content,
+            fileUrl: dto.fileUrl,
+            channelId: dto.channelId,
+            memberId: member.id,
+        };
+
+        if (dto.replyToId) {
+            data.replyToId = dto.replyToId;
+        }
+
         const message = await this.prisma.message.create({
-            data: {
-                content: dto.content,
-                fileUrl: dto.fileUrl,
-                channelId: dto.channelId,
-                memberId: member.id,
-            },
-            include: {
-                member: {
-                    include: {
-                        user: true,
-                    }
-                }
-            }
+            data,
+            include: messageInclude,
         });
 
         const roomKey = `chat:${dto.channelId}:messages`;
-
-        // Broadcast via SocketGateway
         this.socketGateway.server.to(dto.channelId).emit(roomKey, message);
 
         return message;
     }
 
     async getMessages(cursor: string | undefined, channelId: string) {
-        // ... (rest of the file)
         if (!channelId) throw new Error("Channel ID missing");
 
-        let messages: Message[] = [];
+        let messages: any[] = [];
 
         if (cursor) {
             messages = await this.prisma.message.findMany({
                 take: MESSAGES_BATCH,
                 skip: 1,
-                cursor: {
-                    id: cursor,
-                },
-                where: {
-                    channelId: channelId,
-                },
-                include: {
-                    member: {
-                        include: {
-                            user: true,
-                        }
-                    }
-                },
-                orderBy: {
-                    createdAt: "desc",
-                }
-            })
+                cursor: { id: cursor },
+                where: { channelId },
+                include: messageInclude,
+                orderBy: { createdAt: "desc" }
+            });
         } else {
             messages = await this.prisma.message.findMany({
                 take: MESSAGES_BATCH,
-                where: {
-                    channelId: channelId,
-                },
-                include: {
-                    member: {
-                        include: {
-                            user: true,
-                        }
-                    }
-                },
-                orderBy: {
-                    createdAt: "desc",
-                }
+                where: { channelId },
+                include: messageInclude,
+                orderBy: { createdAt: "desc" }
             });
         }
 
         let nextCursor = null;
-
         if (messages.length === MESSAGES_BATCH) {
             nextCursor = messages[MESSAGES_BATCH - 1].id;
         }
 
-        return {
-            items: messages,
-            nextCursor
-        }
+        return { items: messages, nextCursor };
     }
 
     async updateMessage(id: string, dto: UpdateMessageDto, userId: string) {
         const message = await this.prisma.message.findUnique({
             where: { id },
-            include: {
-                member: {
-                    include: {
-                        user: true
-                    }
-                }
-            }
+            include: { member: { include: { user: true } } }
         });
 
         if (!message) throw new Error('Message not found');
@@ -129,13 +120,7 @@ export class MessagesService {
                 content: dto.content || message.content,
                 updatedAt: new Date()
             },
-            include: {
-                member: {
-                    include: {
-                        user: true
-                    }
-                }
-            }
+            include: messageInclude,
         });
     }
 
@@ -144,10 +129,7 @@ export class MessagesService {
             where: { id },
             include: {
                 member: {
-                    include: {
-                        user: true,
-                        server: true
-                    }
+                    include: { user: true, server: true }
                 },
                 channel: true
             }
@@ -155,7 +137,6 @@ export class MessagesService {
 
         if (!message) throw new Error('Message not found');
 
-        // Check if user is message owner or admin/moderator
         const isOwner = message.member.userId === userId;
         const isAdminOrModerator = message.member.role === MemberRole.ADMIN || message.member.role === MemberRole.MODERATOR;
 
@@ -166,17 +147,48 @@ export class MessagesService {
         return this.prisma.message.update({
             where: { id },
             data: {
-                content: "This message has been deleted.",
+                content: "Bu mesaj silindi.",
                 fileUrl: null,
                 deleted: true
             },
+            include: messageInclude,
+        });
+    }
+
+    async togglePin(id: string, userId: string) {
+        const message = await this.prisma.message.findUnique({
+            where: { id },
             include: {
-                member: {
-                    include: {
-                        user: true
-                    }
-                }
+                member: { include: { user: true } },
+                channel: { include: { server: true } }
             }
+        });
+
+        if (!message) throw new Error('Message not found');
+
+        // Check if user is admin or moderator in the server
+        const member = await this.prisma.member.findFirst({
+            where: {
+                userId,
+                serverId: message.channel.serverId,
+                role: { in: [MemberRole.ADMIN, MemberRole.MODERATOR] }
+            }
+        });
+
+        if (!member) throw new Error('Unauthorized');
+
+        return this.prisma.message.update({
+            where: { id },
+            data: { pinned: !message.pinned },
+            include: messageInclude,
+        });
+    }
+
+    async getPinnedMessages(channelId: string) {
+        return this.prisma.message.findMany({
+            where: { channelId, pinned: true, deleted: false },
+            include: messageInclude,
+            orderBy: { createdAt: 'desc' },
         });
     }
 }

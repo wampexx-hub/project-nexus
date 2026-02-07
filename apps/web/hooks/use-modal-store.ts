@@ -1,6 +1,21 @@
 import { create } from "zustand";
 
-export type ModalType = "createServer" | "invite" | "editServer" | "members" | "createChannel" | "leaveServer" | "deleteServer" | "deleteChannel" | "editChannel" | "messageFile" | "deleteMessage" | "editMessage";
+export type ModalType =
+    | "createServer"
+    | "invite"
+    | "editServer"
+    | "members"
+    | "createChannel"
+    | "leaveServer"
+    | "deleteServer"
+    | "deleteChannel"
+    | "editChannel"
+    | "messageFile"
+    | "deleteMessage"
+    | "editMessage"
+    | "search"
+    | "userProfile"
+    | "pinnedMessages";
 
 interface ModalData {
     server?: any;
@@ -9,6 +24,9 @@ interface ModalData {
     apiUrl?: string;
     query?: Record<string, any>;
     message?: any;
+    userId?: string;
+    channelId?: string;
+    [key: string]: any;
 }
 
 interface ModalStore {

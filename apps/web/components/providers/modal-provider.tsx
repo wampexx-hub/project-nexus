@@ -10,6 +10,9 @@ import { EditMessageModal } from "@/components/modals/edit-message-modal";
 import { DeleteMessageModal } from "@/components/modals/delete-message-modal";
 import { EditServerModal } from "@/components/modals/edit-server-modal";
 import { DeleteServerModal } from "@/components/modals/delete-server-modal";
+import { SearchModal } from "@/components/modals/search-modal";
+import { UserProfileModal } from "@/components/modals/user-profile-modal";
+import { PinnedMessagesModal } from "@/components/modals/pinned-messages-modal";
 
 export const ModalProvider = () => {
     const [isMounted, setIsMounted] = useState(false);
@@ -33,6 +36,9 @@ export const ModalProvider = () => {
             <DeleteMessageModal />
             <EditServerModal />
             <DeleteServerModal />
+            <SearchModal />
+            <UserProfileModal />
+            <PinnedMessagesModal />
         </>
     )
 }

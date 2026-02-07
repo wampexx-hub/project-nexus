@@ -10,17 +10,35 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model User {
-  id        String   @id @default(uuid())
-  username  String   @unique
-  email     String   @unique
-  password  String
-  isAdmin   Boolean  @default(false)
-  isBanned  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ============================================
+// USER STATUS
+// ============================================
+enum UserStatus {
+  ONLINE
+  IDLE
+  DND
+  INVISIBLE
+  OFFLINE
+}
 
-  members Member[]
+model User {
+  id           String     @id @default(uuid())
+  username     String     @unique
+  email        String     @unique
+  password     String
+  imageUrl     String?    @db.Text
+  bio          String?    @db.Text
+  status       UserStatus @default(ONLINE)
+  customStatus String?
+  isAdmin      Boolean    @default(false)
+  isBanned     Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  members        Member[]
+  conversations  ConversationParticipant[]
+  directMessages DirectMessage[]
+  reactions      Reaction[]
 }
 
 model Server {
@@ -80,10 +98,70 @@ model Message {
   fileUrl   String?
   memberId  String
   channelId String
+  pinned    Boolean  @default(false)
   deleted   Boolean  @default(false)
+  replyToId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  member  Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  member    Member     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  channel   Channel    @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  replyTo   Message?   @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   Message[]  @relation("MessageReplies")
+  reactions Reaction[]
+}
+
+// ============================================
+// REACTIONS
+// ============================================
+model Reaction {
+  id        String   @id @default(uuid())
+  emoji     String
+  userId    String
+  messageId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId, emoji])
+}
+
+// ============================================
+// DIRECT MESSAGES
+// ============================================
+model Conversation {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants ConversationParticipant[]
+  messages     DirectMessage[]
+}
+
+model ConversationParticipant {
+  id             String   @id @default(uuid())
+  userId         String
+  conversationId String
+  lastReadAt     DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conversationId])
+}
+
+model DirectMessage {
+  id             String   @id @default(uuid())
+  content        String   @db.Text
+  fileUrl        String?
+  userId         String
+  conversationId String
+  deleted        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 }

@@ -172,13 +172,110 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     client.join(`server:${payload.serverId}`);
 
-    // Get all sockets in this server room
     this.server.in(`server:${payload.serverId}`).fetchSockets().then((sockets) => {
       const onlineUsers = sockets.map(s => s.data.userId).filter(Boolean);
       this.server.to(`server:${payload.serverId}`).emit(`presence:${payload.serverId}`, {
         onlineUsers
       });
     });
+  }
+
+  // ============================================
+  // DIRECT MESSAGE EVENTS
+  // ============================================
+
+  @SubscribeMessage('join-conversation')
+  handleJoinConversation(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { conversationId: string }
+  ) {
+    if (!payload.conversationId) return;
+    client.join(`dm:${payload.conversationId}`);
+  }
+
+  @SubscribeMessage('send-dm')
+  async handleDirectMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { content: string; conversationId: string; fileUrl?: string }
+  ) {
+    const userId = client.data.userId;
+
+    const participant = await this.prisma.conversationParticipant.findFirst({
+      where: { userId, conversationId: payload.conversationId }
+    });
+
+    if (!participant) return;
+
+    const message = await this.prisma.directMessage.create({
+      data: {
+        content: payload.content,
+        fileUrl: payload.fileUrl,
+        userId,
+        conversationId: payload.conversationId,
+      },
+      include: {
+        user: {
+          select: { id: true, username: true, email: true, imageUrl: true, status: true }
+        }
+      }
+    });
+
+    await this.prisma.conversation.update({
+      where: { id: payload.conversationId },
+      data: { updatedAt: new Date() }
+    });
+
+    const roomKey = `dm:${payload.conversationId}:messages`;
+    this.server.to(`dm:${payload.conversationId}`).emit(roomKey, message);
+
+    return message;
+  }
+
+  @SubscribeMessage('dm-typing')
+  handleDmTyping(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { conversationId: string; userId: string; username: string }
+  ) {
+    client.to(`dm:${payload.conversationId}`).emit(`dm-typing:${payload.conversationId}`, {
+      userId: payload.userId,
+      username: payload.username
+    });
+  }
+
+  // ============================================
+  // REACTION EVENTS
+  // ============================================
+
+  @SubscribeMessage('toggle-reaction')
+  async handleReaction(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { messageId: string; emoji: string; channelId: string }
+  ) {
+    const userId = client.data.userId;
+    if (!userId) return;
+
+    const existing = await this.prisma.reaction.findUnique({
+      where: {
+        userId_messageId_emoji: { userId, messageId: payload.messageId, emoji: payload.emoji }
+      }
+    });
+
+    let result;
+    if (existing) {
+      await this.prisma.reaction.delete({ where: { id: existing.id } });
+      result = { action: 'removed', emoji: payload.emoji, messageId: payload.messageId, userId };
+    } else {
+      const reaction = await this.prisma.reaction.create({
+        data: { emoji: payload.emoji, userId, messageId: payload.messageId },
+        include: {
+          user: { select: { id: true, username: true, imageUrl: true } }
+        }
+      });
+      result = { action: 'added', reaction, messageId: payload.messageId, userId };
+    }
+
+    this.server.to(payload.channelId).emit(`reaction:${payload.channelId}`, result);
+    return result;
   }
 
   // ============================================

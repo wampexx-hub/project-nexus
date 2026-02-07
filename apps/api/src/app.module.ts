@@ -12,9 +12,23 @@ import { ChannelsService } from './channels/channels.service';
 import { MembersController } from './members/members.controller';
 import { MembersService } from './members/members.service';
 import { AdminModule } from './admin/admin.module';
+import { ConversationsModule } from './conversations/conversations.module';
+import { ReactionsModule } from './reactions/reactions.module';
+import { SearchModule } from './search/search.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, ServersModule, SocketModule, AdminModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    ServersModule,
+    SocketModule,
+    AdminModule,
+    ConversationsModule,
+    ReactionsModule,
+    SearchModule,
+    UsersModule,
+  ],
   controllers: [AppController, MessagesController, ChannelsController, MembersController],
   providers: [AppService, MessagesService, ChannelsService, MembersService],
 })

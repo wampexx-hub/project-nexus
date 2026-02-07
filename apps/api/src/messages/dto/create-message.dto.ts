@@ -13,4 +13,8 @@ export class CreateMessageDto {
 
     @IsString()
     serverId: string;
+
+    @IsOptional()
+    @IsString()
+    replyToId?: string;
 }
